@@ -1,0 +1,20 @@
+(
+    path: "gabe-idle-run.png",
+    tile_size: (
+        w: 24.0,
+        h: 24.0,
+    ),
+    columns: 7,
+    rows: 1,
+    // These can be optionally defined
+    /*
+    padding: (
+        h: 2.0,
+        w: 2.0,
+    ),
+    offset: (
+        h: 10.0,
+        w: 10.0,
+    ),
+    */
+)
