@@ -7,7 +7,7 @@
 
 | bevy | bevy_titan |
 |------|------------|
-| 0.9  | 0.1        |
+| 0.9  | 0.1.1      |
 
 ## What is bevy_titan?
 
