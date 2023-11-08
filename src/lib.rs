@@ -35,8 +35,8 @@
 //! fn main() {
 //!     App::new()
 //!         .add_plugins(DefaultPlugins)
-//!         .add_plugin(SpriteSheetLoaderPlugin)
-//!         .add_system(load_spritesheet)
+//!         .add_plugins(SpriteSheetLoaderPlugin)
+//!         .add_systems(Startup, load_spritesheet)
 //!         .run();
 //! }
 //!
@@ -58,13 +58,14 @@
 #![warn(unused_imports, missing_docs)]
 
 use bevy::{
-    asset::{AssetLoader, AssetPath, LoadContext, LoadedAsset},
-    prelude::{AddAsset, App, Handle, Image, Plugin, Vec2},
+    asset::{io::Reader, AssetLoader, AssetPath, AsyncReadExt, LoadContext},
+    prelude::{App, AssetApp, Handle, Image, Plugin, Vec2},
     sprite::TextureAtlas,
     utils::BoxedFuture,
 };
 use serde::Deserialize;
 use std::path::Path;
+use thiserror::Error;
 
 /// Adds support for spritesheet manifest files loading to the app.
 pub struct SpriteSheetLoaderPlugin;
@@ -79,20 +80,39 @@ impl Plugin for SpriteSheetLoaderPlugin {
 #[derive(Default)]
 pub struct SpriteSheetLoader;
 
+/// Possible errors that can be produced by [`SpriteSheetLoader`]
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum SpriteSheetLoaderError {
+    /// An [IO](std::io) Error
+    #[error("Could not load file: {0}")]
+    Io(#[from] std::io::Error),
+    /// A [RON](ron) Error
+    #[error("Could not parse RON: {0}")]
+    RonSpannedError(#[from] ron::error::SpannedError),
+}
+
 /// File extension for spritesheet manifest files written in ron.
 pub const FILE_EXTENSIONS: &[&str] = &["titan"];
 
 impl AssetLoader for SpriteSheetLoader {
+    type Asset = TextureAtlas;
+    type Settings = ();
+    type Error = SpriteSheetLoaderError;
+
     fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
+        reader: &'a mut Reader,
+        _settings: &'a (),
         load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
-            let spritesheet_manifest = ron::de::from_bytes::<SpriteSheetManifest>(bytes)?;
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
+            let spritesheet_manifest = ron::de::from_bytes::<SpriteSheetManifest>(&bytes)?;
 
-            let image_asset_path = AssetPath::new_ref(Path::new(&spritesheet_manifest.path), None);
-            let image_handle: Handle<Image> = load_context.get_handle(image_asset_path.clone());
+            let image_asset_path = AssetPath::from_path(Path::new(&spritesheet_manifest.path));
+            let image_handle: Handle<Image> = load_context.load(image_asset_path.clone());
 
             let texture_atlas = TextureAtlas::from_grid(
                 image_handle,
@@ -103,10 +123,7 @@ impl AssetLoader for SpriteSheetLoader {
                 spritesheet_manifest.offset.map(|x| x.into()),
             );
 
-            let atlas_asset = LoadedAsset::new(texture_atlas).with_dependency(image_asset_path);
-
-            load_context.set_default_asset(atlas_asset);
-            Ok(())
+            Ok(texture_atlas)
         })
     }
 
