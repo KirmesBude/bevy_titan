@@ -58,9 +58,11 @@
 #![warn(unused_imports, missing_docs)]
 
 use bevy::{
-    asset::{io::Reader, AssetLoader, AssetPath, AsyncReadExt, LoadContext},
+    asset::{io::Reader, AssetIndex, AssetLoader, AssetPath, AsyncReadExt, LoadContext},
     prelude::{App, AssetApp, Handle, Image, Plugin, Vec2},
-    sprite::TextureAtlas,
+    reflect::{FromReflect, Reflect},
+    render::render_resource::Texture,
+    sprite::{TextureAtlas, TextureAtlasBuilder},
     utils::BoxedFuture,
 };
 use serde::Deserialize;
@@ -109,19 +111,40 @@ impl AssetLoader for SpriteSheetLoader {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
-            let spritesheet_manifest = ron::de::from_bytes::<SpriteSheetManifest>(&bytes)?;
+            let titan_entries = ron::de::from_bytes::<Vec<TitanEntry>>(&bytes)?;
 
-            let image_asset_path = AssetPath::from_path(Path::new(&spritesheet_manifest.path));
-            let image_handle: Handle<Image> = load_context.load(image_asset_path.clone());
+            /* TODO: Actually consider others */
+            let entry = &titan_entries[0];
 
-            let texture_atlas = TextureAtlas::from_grid(
-                image_handle,
-                spritesheet_manifest.tile_size.into(),
-                spritesheet_manifest.columns,
-                spritesheet_manifest.rows,
-                spritesheet_manifest.padding.map(|x| x.into()),
-                spritesheet_manifest.offset.map(|x| x.into()),
-            );
+            // Collect all images and create a new one
+            let image_asset_path = AssetPath::from_path(Path::new(&entry.path));
+            let image = load_context
+                .load_direct(image_asset_path.clone())
+                .await
+                .unwrap();
+            let image = image.take::<Image>().unwrap();
+            let image_size = image.size_f32();
+
+            // Create a Handle from the Image
+            let image_handle = load_context.add_loaded_labeled_asset("image", image.into());
+
+            let mut texture_atlas = TextureAtlas::new_empty(image_handle, image_size);
+            /* TODO: Handle other options */
+            if let TitanSpriteSheet::Homogeneous{tile_size, columns, rows, ..} = &entry.sprite_sheet {
+                for i in 0..*rows {
+                    for j in 0..*columns {
+                        /* TODO: Padding and offest */
+                        let rect = bevy::math::Rect {
+                            min: Vec2::new(j as f32 * tile_size.x, i as f32 * tile_size.y),
+                            max: Vec2::new(
+                                (j + 1) as f32 * tile_size.x,
+                                (i + 1) as f32 * tile_size.y,
+                            ),
+                        };
+                        texture_atlas.add_texture(rect);
+                    }
+                }
+            }
 
             Ok(texture_atlas)
         })
@@ -132,36 +155,26 @@ impl AssetLoader for SpriteSheetLoader {
     }
 }
 
-/// Declaration of the deserialized struct from the spritesheet manifest file written in ron.
-/// Note: This is only public for the purpose to document the ron/titan format.
+/* TODO: Parse a Vec of this */
 #[derive(Debug, Deserialize)]
-pub struct SpriteSheetManifest {
-    /// Path to the spritesheet image asset.
-    pub path: String,
-    /// Width and height of a tile inside the spritesheet.
-    pub tile_size: Rect,
-    /// How many columns of tiles there are inside the spritesheet.
-    pub columns: usize,
-    /// How many rows of tiles there are inside the spritesheet.
-    pub rows: usize,
+struct TitanEntry {
+    path: String,
     #[serde(default)]
-    /// Padding between tiles.
-    pub padding: Option<Rect>,
-    #[serde(default)]
-    /// Offset from the top left from where the tiling begins.
-    pub offset: Option<Rect>,
+    sprite_sheet: TitanSpriteSheet,
 }
 
-/// Helper struct to represent Vec2.
-/// Note: This is only public for the purpose to document the ron/titan format.
-#[derive(Debug, Deserialize)]
-pub struct Rect {
-    w: f32,
-    h: f32,
-}
-
-impl From<Rect> for Vec2 {
-    fn from(value: Rect) -> Self {
-        Self::new(value.w, value.h)
-    }
+#[derive(Debug, Default, Deserialize)]
+enum TitanSpriteSheet {
+    #[default]
+    None,
+    Homogeneous{
+        tile_size: Vec2,
+        columns: usize,
+        rows: usize,
+        #[serde(default)]
+        padding: Option<Vec2>,
+        #[serde(default)]
+        offset: Option<Vec2>,
+    },
+    Heterogeneous(Vec<bevy::math::Rect>),
 }
