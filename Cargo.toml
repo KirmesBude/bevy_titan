@@ -20,8 +20,13 @@ ron = "0.8"
 thiserror = "1"
 
 [dev-dependencies]
-bevy = "0.12"
+bevy = { version = "0.12", features = ["file_watcher"] }
+bevy_asset_loader = "0.18.0"
 
 [[example]]
 name = "spritesheet"
 path = "examples/spritesheet.rs"
+
+[[example]]
+name = "bevy_asset_loader"
+path = "examples/bevy_asset_loader.rs"
