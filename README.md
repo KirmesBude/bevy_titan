@@ -5,16 +5,17 @@
 [![docs.rs](https://docs.rs/bevy_titan/badge.svg)](https://docs.rs/bevy_titan)
 [![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/bevyengine/bevy#license)
 
-| bevy | bevy_titan |
-|------|------------|
-| 0.12 | 0.4.0      |
-| 0.11 | 0.3.0      |
-| 0.10 | 0.2.0      |
-| 0.9  | 0.1.1      |
+| bevy | bevy_titan   |
+|------|--------------|
+| 0.12 | 0.4.0, 0.5.0 |
+| 0.11 | 0.3.0        |
+| 0.10 | 0.2.0        |
+| 0.9  | 0.1.1        |
 
 ## What is bevy_titan?
 
 Simple plugin to load textures atlas from spritesheet manifest files written in ron.
+It also supports creating a texture atlas from multiple sprites and even multiple sprite sheets.
 
 ## How to use?
 
