@@ -130,19 +130,19 @@ impl AssetLoader for SpriteSheetLoader {
             let mut rect_ids = Vec::with_capacity(rect_ids_len);
             let images_len = titan_entries.len();
             let mut images = Vec::with_capacity(images_len);
-            for (titan_entry_index, titan_entry) in titan_entries.iter().enumerate() {
+            for (titan_entry_index, titan_entry) in titan_entries.into_iter().enumerate() {
                 /* Load the image */
                 let image_asset_path = AssetPath::from_path(Path::new(&titan_entry.path));
                 let image = load_context.load_direct(image_asset_path).await.unwrap(); /* TODO: return Result */
                 let image = image.take::<Image>().unwrap(); /* TODO: return Result */
 
                 /* Get and insert all rects */
-                match &titan_entry.sprite_sheet {
+                match titan_entry.sprite_sheet {
                     TitanSpriteSheet::None => {
                         let rect_id = RectId {
                             image_index: titan_entry_index,
-                            position: (0, 0),
-                            size: (image.width() as usize, image.height() as usize),
+                            position: Position::ZERO,
+                            size: image.size().into(),
                         };
                         rect_ids.push(rect_id);
                     }
@@ -153,32 +153,32 @@ impl AssetLoader for SpriteSheetLoader {
                         padding,
                         offset,
                     } => {
-                        for i in 0..*rows {
-                            for j in 0..*columns {
+                        for i in 0..rows {
+                            for j in 0..columns {
                                 let padding = padding.unwrap_or(UVec2::ZERO);
                                 let offset = offset.unwrap_or(UVec2::ZERO);
-                                let position_x = j * tile_size.x as usize
+                                let x = j * tile_size.x as usize
                                     + offset.x as usize
                                     + ((1 + 2 * j) * padding.x as usize);
-                                let position_y = i * tile_size.y as usize
+                                let y = i * tile_size.y as usize
                                     + offset.y as usize
                                     + ((1 + 2 * i) * padding.y as usize);
 
                                 let rect_id = RectId {
                                     image_index: titan_entry_index,
-                                    position: (position_x, position_y),
-                                    size: (tile_size.x as usize, tile_size.y as usize),
+                                    position: Position { x, y },
+                                    size: tile_size.into(),
                                 };
                                 rect_ids.push(rect_id);
                             }
                         }
                     }
                     TitanSpriteSheet::Heterogeneous(rects) => {
-                        rects.iter().for_each(|(pos, size)| {
+                        rects.into_iter().for_each(|(position, size)| {
                             let rect_id = RectId {
                                 image_index: titan_entry_index,
-                                position: (pos.x as usize, pos.y as usize),
-                                size: (size.x as usize, size.y as usize),
+                                position,
+                                size,
                             };
                             rect_ids.push(rect_id);
                         })
@@ -193,7 +193,7 @@ impl AssetLoader for SpriteSheetLoader {
             let mut rects_to_place = GroupedRectsToPlace::<RectId>::new();
             rect_ids.iter().for_each(|rect_id| {
                 let rect_to_insert =
-                    RectToInsert::new(rect_id.size.0 as u32, rect_id.size.1 as u32, 1);
+                    RectToInsert::new(rect_id.size.width as u32, rect_id.size.height as u32, 1);
                 rects_to_place.push_rect(rect_id.clone(), None, rect_to_insert);
             });
 
@@ -244,21 +244,12 @@ impl AssetLoader for SpriteSheetLoader {
                         position,
                     );
 
-                    Rect {
-                        min: Vec2::new(packed_location.x() as f32, packed_location.y() as f32),
-                        max: Vec2::new(
-                            (packed_location.x() + packed_location.width()) as f32,
-                            (packed_location.y() + packed_location.height()) as f32,
-                        ),
-                    }
+                    packed_location.as_rect()
                 })
                 .collect();
 
             // Create a Handle from the Image
-            let texture_atlas_image_size = Vec2::new(
-                texture_atlas_image.width() as f32,
-                texture_atlas_image.height() as f32,
-            );
+            let texture_atlas_image_size = texture_atlas_size.as_vec2();
             let texture_atlas_image_handle =
                 load_context.add_loaded_labeled_asset("image", texture_atlas_image.into());
 
@@ -277,7 +268,14 @@ impl AssetLoader for SpriteSheetLoader {
     }
 }
 
-/* TODO: Parse a Vec of this */
+/* TODO: attributes like TextureAtlasBuilder */
+#[derive(Debug, Deserialize)]
+struct Titan {
+    #[serde(default)]
+    configuration: Option<()>,
+    textures: Vec<TitanEntry>,
+}
+
 #[derive(Debug, Deserialize)]
 struct TitanEntry {
     path: String,
@@ -298,21 +296,55 @@ enum TitanSpriteSheet {
         #[serde(default)]
         offset: Option<UVec2>,
     },
-    Heterogeneous(Vec<(UVec2, UVec2)>),
+    Heterogeneous(Vec<(Position, Size)>),
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Ord, PartialOrd)]
 struct RectId {
     image_index: usize,
-    position: (usize, usize),
-    size: (usize, usize),
+    position: Position,
+    size: Size,
+}
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Ord, PartialOrd, Copy, Deserialize)]
+struct Position {
+    x: usize,
+    y: usize,
+}
+
+impl Position {
+    const ZERO: Self = Self { x: 0, y: 0 };
+}
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Ord, PartialOrd, Copy, Deserialize)]
+struct Size {
+    width: usize,
+    height: usize,
+}
+
+impl From<UVec2> for Size {
+    fn from(value: UVec2) -> Self {
+        Self {
+            width: value.x as usize,
+            height: value.y as usize,
+        }
+    }
+}
+
+impl From<&UVec2> for Size {
+    fn from(value: &UVec2) -> Self {
+        Self {
+            width: value.x as usize,
+            height: value.y as usize,
+        }
+    }
 }
 
 fn copy_rect_image_to_texture_atlas(
     texture_atlas: &mut Image,
     location: &PackedLocation,
     image: &Image,
-    position: (usize, usize),
+    position: Position,
 ) {
     let format_size = texture_atlas.texture_descriptor.format.pixel_size();
     let rect_x = location.x() as usize;
@@ -325,10 +357,26 @@ fn copy_rect_image_to_texture_atlas(
     for i in 0..rect_height {
         let texture_atlas_begin = (rect_x + ((rect_y + i) * texture_atlas_width)) * format_size;
         let texture_atlas_end = texture_atlas_begin + rect_width * format_size;
-        let data_begin = (position.0 + (position.1 + i) * image.width() as usize) * format_size;
+        let data_begin = (position.x + (position.y + i) * image.width() as usize) * format_size;
         let data_end = data_begin + rect_width * format_size;
 
         texture_atlas.data[texture_atlas_begin..texture_atlas_end]
             .copy_from_slice(&image.data[data_begin..data_end]);
+    }
+}
+
+trait AsRect {
+    fn as_rect(&self) -> Rect;
+}
+
+impl AsRect for PackedLocation {
+    fn as_rect(&self) -> Rect {
+        Rect {
+            min: Vec2::new(self.x() as f32, self.y() as f32),
+            max: Vec2::new(
+                (self.x() + self.width()) as f32,
+                (self.y() + self.height()) as f32,
+            ),
+        }
     }
 }
