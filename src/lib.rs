@@ -62,12 +62,13 @@ use bevy::{
     prelude::{App, AssetApp, Image, Plugin, Rect, UVec2, Vec2},
     render::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
+        texture::TextureFormatPixelInfo,
     },
     sprite::TextureAtlas,
     utils::BoxedFuture,
 };
 use rectangle_pack::{
-    contains_smallest_box, pack_rects, volume_heuristic, GroupedRectsToPlace,
+    contains_smallest_box, pack_rects, volume_heuristic, GroupedRectsToPlace, PackedLocation,
     RectToInsert, TargetBin,
 };
 use serde::Deserialize;
@@ -197,7 +198,7 @@ impl AssetLoader for SpriteSheetLoader {
             });
 
             /* Resolve the rect packing */
-            let texture_atlas_size = UVec2::new(1024, 1024); /* TODO: Other size and multiple tries */
+            let texture_atlas_size = UVec2::new(72, 72); /* TODO: Other size and multiple tries */
             let mut target_bins = BTreeMap::new();
             target_bins.insert(
                 0,
@@ -214,7 +215,7 @@ impl AssetLoader for SpriteSheetLoader {
             /* Create new image from rects and source images */
             let pixel_format_size = 4; /* TODO: Proper */
             let texture_format = TextureFormat::Rgba8UnormSrgb; /* TODO: Proper */
-            let texture_atlas_image = Image::new(
+            let mut texture_atlas_image = Image::new(
                 Extent3d {
                     width: texture_atlas_size.x,
                     height: texture_atlas_size.y,
@@ -229,14 +230,19 @@ impl AssetLoader for SpriteSheetLoader {
                 .map(|rect_id| {
                     let image = images.get(rect_id.image_index).unwrap();
                     let position = rect_id.position;
-                    let size = rect_id.size;
 
                     let (_, packed_location) = rectangle_placements
                         .packed_locations()
                         .get(&rect_id)
                         .unwrap();
 
-                    /* TODO: Image copy stuff */
+                    /* Fill out the texture atlas */
+                    copy_rect_image_to_texture_atlas(
+                        &mut texture_atlas_image,
+                        packed_location,
+                        image,
+                        position,
+                    );
 
                     Rect {
                         min: Vec2::new(packed_location.x() as f32, packed_location.y() as f32),
@@ -302,8 +308,12 @@ struct RectId {
     size: (usize, usize),
 }
 
-/*
-fn copy_rect_image_to_texture_atlas(texture_atlas: &mut Image, data: &[u8], location: &PackedLocation) {
+fn copy_rect_image_to_texture_atlas(
+    texture_atlas: &mut Image,
+    location: &PackedLocation,
+    image: &Image,
+    position: (usize, usize),
+) {
     let format_size = texture_atlas.texture_descriptor.format.pixel_size();
     let rect_x = location.x() as usize;
     let rect_y = location.y() as usize;
@@ -313,12 +323,12 @@ fn copy_rect_image_to_texture_atlas(texture_atlas: &mut Image, data: &[u8], loca
 
     /* Copy over from rect image, row by row */
     for i in 0..rect_height {
-        let texture_atlas_begin = (rect_x+((rect_y+i)*texture_atlas_width)) * format_size;
-        let texture_atlas_end = texture_atlas_begin + rect_height * format_size;
-        let data_begin = i * rect_width * format_size;
+        let texture_atlas_begin = (rect_x + ((rect_y + i) * texture_atlas_width)) * format_size;
+        let texture_atlas_end = texture_atlas_begin + rect_width * format_size;
+        let data_begin = (position.0 + (position.1 + i) * image.width() as usize) * format_size;
         let data_end = data_begin + rect_width * format_size;
 
-        texture_atlas.data[texture_atlas_begin..texture_atlas_end].copy_from_slice(&data[data_begin..data_end]);
+        texture_atlas.data[texture_atlas_begin..texture_atlas_end]
+            .copy_from_slice(&image.data[data_begin..data_end]);
     }
 }
-*/

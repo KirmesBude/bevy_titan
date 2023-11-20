@@ -4,6 +4,7 @@
 
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
+use bevy_titan::SpriteSheetLoaderPlugin;
 
 /// This example demonstrates how to load a texture atlas from a sprite sheet
 ///
@@ -11,7 +12,8 @@ use bevy_asset_loader::prelude::*;
 fn main() {
     App::new()
         .add_state::<MyStates>()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
+        .add_plugins(SpriteSheetLoaderPlugin)
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
@@ -72,7 +74,7 @@ fn animate_sprite_system(
     for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());
         if timer.0.finished() {
-            sprite.index = (sprite.index + 1) % 8;
+            sprite.index = (sprite.index + 1) % 7;
         }
     }
 }
