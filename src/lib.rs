@@ -70,7 +70,7 @@ use bevy::{
 };
 use rectangle_pack::{
     contains_smallest_box, pack_rects, volume_heuristic, GroupedRectsToPlace, PackedLocation,
-    RectToInsert, TargetBin,
+    RectToInsert, RectanglePackError, TargetBin,
 };
 use serde::Deserialize;
 use std::{collections::BTreeMap, path::Path};
@@ -111,6 +111,11 @@ pub enum SpriteSheetLoaderError {
     /// A IncompatibleFormatError
     #[error("Placing texture {0} of format {1:?} into texture atlas of format {2:?}")]
     IncompatibleFormatError(String, TextureFormat, TextureFormat),
+    /* TODO: Make work
+    /// A RectanglePackError
+    #[error("Could not pack all rectangles for the given size: {0:?}")]
+    RectanglePackError(#[from] RectanglePackError),
+    */
 }
 
 /// File extension for spritesheet manifest files written in ron.
@@ -138,7 +143,9 @@ impl AssetLoader for SpriteSheetLoader {
             let rect_ids_len = titan_entries.iter().fold(0, |acc, titan_entry| {
                 acc + match &titan_entry.sprite_sheet {
                     TitanSpriteSheet::None => 1,
-                    TitanSpriteSheet::Homogeneous { columns, rows, .. } => columns * rows,
+                    TitanSpriteSheet::Homogeneous { columns, rows, .. } => {
+                        (columns * rows) as usize
+                    }
                     TitanSpriteSheet::Heterogeneous(vec) => vec.len(),
                 }
             });
@@ -174,12 +181,8 @@ impl AssetLoader for SpriteSheetLoader {
                             for j in 0..columns {
                                 let padding = padding.unwrap_or(UVec2::ZERO);
                                 let offset = offset.unwrap_or(UVec2::ZERO);
-                                let x = j * tile_size.x as usize
-                                    + offset.x as usize
-                                    + ((1 + 2 * j) * padding.x as usize);
-                                let y = i * tile_size.y as usize
-                                    + offset.y as usize
-                                    + ((1 + 2 * i) * padding.y as usize);
+                                let x = j * tile_size.x + offset.x + ((1 + 2 * j) * padding.x);
+                                let y = i * tile_size.y + offset.y + ((1 + 2 * i) * padding.y);
 
                                 let rect_id = RectId {
                                     image_index: titan_entry_index,
@@ -228,38 +231,55 @@ impl AssetLoader for SpriteSheetLoader {
             let mut rects_to_place = GroupedRectsToPlace::<RectId>::new();
             rect_ids.iter().for_each(|rect_id| {
                 let rect_to_insert =
-                    RectToInsert::new(rect_id.size.width() as u32, rect_id.size.height() as u32, 1);
+                    RectToInsert::new(rect_id.size.width(), rect_id.size.height(), 1);
                 rects_to_place.push_rect(rect_id.clone(), None, rect_to_insert);
             });
 
             /* Resolve the rect packing */
-            let texture_atlas_size = UVec2::new(72, 72); /* TODO: Other size and multiple tries */
-            let mut target_bins = BTreeMap::new();
-            target_bins.insert(
-                0,
-                TargetBin::new(texture_atlas_size.x, texture_atlas_size.y, 1),
+            let mut texture_atlas_size = TitanUVec2(
+                configuration.initial_size.width(),
+                configuration.initial_size.height(),
             );
-            let rectangle_placements = pack_rects(
-                &rects_to_place,
-                &mut target_bins,
-                &volume_heuristic,
-                &contains_smallest_box,
-            )
-            .unwrap();
+            let rectangle_placements = loop {
+                let mut target_bins = BTreeMap::new();
+                target_bins.insert(
+                    0,
+                    TargetBin::new(texture_atlas_size.x(), texture_atlas_size.y(), 1),
+                );
+                match pack_rects(
+                    &rects_to_place,
+                    &mut target_bins,
+                    &volume_heuristic,
+                    &contains_smallest_box,
+                ) {
+                    Ok(rectangle_placements) => break rectangle_placements,
+                    Err(err) => {
+                        if texture_atlas_size >= configuration.max_size {
+                            /* TODO: Make word */
+                            /* return Err(SpriteSheetLoaderError::RectanglePackError(err)); */
+                            continue;
+                        }
+                        texture_atlas_size = TitanUVec2(
+                            (texture_atlas_size.x() * 2).min(configuration.max_size.x()),
+                            (texture_atlas_size.y() * 2).min(configuration.max_size.y()),
+                        );
+                    }
+                }
+            };
 
             /* Create new image from rects and source images */
             let texture_format = configuration.format.0;
             let mut texture_atlas_image = Image::new(
                 Extent3d {
-                    width: texture_atlas_size.x,
-                    height: texture_atlas_size.y,
+                    width: texture_atlas_size.width(),
+                    height: texture_atlas_size.height(),
                     depth_or_array_layers: 1,
                 },
                 TextureDimension::D2,
                 vec![
                     0;
                     configuration.format.0.pixel_size()
-                        * (texture_atlas_size.x * texture_atlas_size.y) as usize
+                        * (texture_atlas_size.width() * texture_atlas_size.height()) as usize
                 ],
                 texture_format,
             );
@@ -287,7 +307,7 @@ impl AssetLoader for SpriteSheetLoader {
                 .collect();
 
             // Create a Handle from the Image
-            let texture_atlas_image_size = texture_atlas_size.as_vec2();
+            let texture_atlas_image_size = texture_atlas_size.into();
             let texture_atlas_image_handle =
                 load_context.add_loaded_labeled_asset("image", texture_atlas_image.into());
 
@@ -440,8 +460,8 @@ enum TitanSpriteSheet {
     None,
     Homogeneous {
         tile_size: UVec2,
-        columns: usize,
-        rows: usize,
+        columns: u32,
+        rows: u32,
         #[serde(default)]
         padding: Option<UVec2>,
         #[serde(default)]
@@ -458,37 +478,46 @@ struct RectId {
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Ord, PartialOrd, Copy, Deserialize)]
-struct TitanUVec2(usize, usize);
+struct TitanUVec2(u32, u32);
 
 impl TitanUVec2 {
     const ZERO: Self = Self(0, 0);
 
-    fn x(&self) -> usize {
+    fn x(&self) -> u32 {
         self.0
     }
 
-    fn y(&self) -> usize {
+    fn y(&self) -> u32 {
         self.1
     }
 
-    fn width(&self) -> usize {
+    fn width(&self) -> u32 {
         self.0
     }
 
-    fn height(&self) -> usize {
+    fn height(&self) -> u32 {
         self.1
     }
 }
 
 impl From<UVec2> for TitanUVec2 {
     fn from(value: UVec2) -> Self {
-        Self(value.x as usize, value.y as usize)
+        Self(value.x, value.y)
     }
 }
 
 impl From<&UVec2> for TitanUVec2 {
     fn from(value: &UVec2) -> Self {
-        Self(value.x as usize, value.y as usize)
+        Self(value.x, value.y)
+    }
+}
+
+impl From<TitanUVec2> for Vec2 {
+    fn from(value: TitanUVec2) -> Self {
+        Self {
+            x: value.0 as f32,
+            y: value.1 as f32,
+        }
     }
 }
 
@@ -509,7 +538,9 @@ fn copy_rect_image_to_texture_atlas(
     for i in 0..rect_height {
         let texture_atlas_begin = (rect_x + ((rect_y + i) * texture_atlas_width)) * format_size;
         let texture_atlas_end = texture_atlas_begin + rect_width * format_size;
-        let data_begin = (position.x() + (position.y() + i) * image.width() as usize) * format_size;
+        let data_begin = (position.x() as usize
+            + (position.y() as usize + i) * image.width() as usize)
+            * format_size;
         let data_end = data_begin + rect_width * format_size;
 
         texture_atlas.data[texture_atlas_begin..texture_atlas_end]
