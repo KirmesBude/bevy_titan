@@ -1,4 +1,8 @@
 (
+    configuration: (
+        initial_size: (72, 72),
+        max_size: (72, 72),
+    ),
     textures: [
         (
             path: "gabe-idle-run.png",

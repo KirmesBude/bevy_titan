@@ -116,6 +116,9 @@ pub enum SpriteSheetLoaderError {
     #[error("Could not pack all rectangles for the given size: {0:?}")]
     RectanglePackError(#[from] RectanglePackError),
     */
+    /// An NoEntriesError
+    #[error("No entries were found")]
+    NoEntriesError,
 }
 
 /// File extension for spritesheet manifest files written in ron.
@@ -138,6 +141,10 @@ impl AssetLoader for SpriteSheetLoader {
             let titan = ron::de::from_bytes::<Titan>(&bytes)?;
             let configuration = titan.configuration;
             let titan_entries = titan.textures;
+
+            if titan_entries.is_empty() {
+                return Err(SpriteSheetLoaderError::NoEntriesError);
+            }
 
             /* Save rect ids and images for later use */
             let rect_ids_len = titan_entries.iter().fold(0, |acc, titan_entry| {
@@ -179,15 +186,17 @@ impl AssetLoader for SpriteSheetLoader {
                     } => {
                         for i in 0..rows {
                             for j in 0..columns {
-                                let padding = padding.unwrap_or(UVec2::ZERO);
-                                let offset = offset.unwrap_or(UVec2::ZERO);
-                                let x = j * tile_size.x + offset.x + ((1 + 2 * j) * padding.x);
-                                let y = i * tile_size.y + offset.y + ((1 + 2 * i) * padding.y);
+                                let x = j * tile_size.width()
+                                    + offset.x()
+                                    + ((1 + 2 * j) * padding.x());
+                                let y = i * tile_size.height()
+                                    + offset.y()
+                                    + ((1 + 2 * i) * padding.y());
 
                                 let rect_id = RectId {
                                     image_index: titan_entry_index,
                                     position: TitanUVec2(x, y),
-                                    size: tile_size.into(),
+                                    size: tile_size,
                                 };
                                 rect_ids.push(rect_id);
                             }
@@ -227,84 +236,100 @@ impl AssetLoader for SpriteSheetLoader {
                 images.push(image);
             }
 
-            /* Query rect to place */
-            let mut rects_to_place = GroupedRectsToPlace::<RectId>::new();
-            rect_ids.iter().for_each(|rect_id| {
-                let rect_to_insert =
-                    RectToInsert::new(rect_id.size.width(), rect_id.size.height(), 1);
-                rects_to_place.push_rect(rect_id.clone(), None, rect_to_insert);
-            });
+            let (texture_atlas_size, texture_atlas_image, texture_atlas_textures) = if images.len()
+                > 1
+            {
+                /* Query rect to place */
+                let mut rects_to_place = GroupedRectsToPlace::<RectId>::new();
+                rect_ids.iter().for_each(|rect_id| {
+                    let rect_to_insert =
+                        RectToInsert::new(rect_id.size.width(), rect_id.size.height(), 1);
+                    rects_to_place.push_rect(*rect_id, None, rect_to_insert);
+                });
 
-            /* Resolve the rect packing */
-            let mut texture_atlas_size = TitanUVec2(
-                configuration.initial_size.width(),
-                configuration.initial_size.height(),
-            );
-            let rectangle_placements = loop {
-                let mut target_bins = BTreeMap::new();
-                target_bins.insert(
-                    0,
-                    TargetBin::new(texture_atlas_size.x(), texture_atlas_size.y(), 1),
+                /* Resolve the rect packing */
+                let mut texture_atlas_size = TitanUVec2(
+                    configuration.initial_size.width(),
+                    configuration.initial_size.height(),
                 );
-                match pack_rects(
-                    &rects_to_place,
-                    &mut target_bins,
-                    &volume_heuristic,
-                    &contains_smallest_box,
-                ) {
-                    Ok(rectangle_placements) => break rectangle_placements,
-                    Err(err) => {
-                        if texture_atlas_size >= configuration.max_size {
-                            /* TODO: Make word */
-                            /* return Err(SpriteSheetLoaderError::RectanglePackError(err)); */
-                            continue;
-                        }
-                        texture_atlas_size = TitanUVec2(
-                            (texture_atlas_size.x() * 2).min(configuration.max_size.x()),
-                            (texture_atlas_size.y() * 2).min(configuration.max_size.y()),
-                        );
-                    }
-                }
-            };
-
-            /* Create new image from rects and source images */
-            let texture_format = configuration.format.0;
-            let mut texture_atlas_image = Image::new(
-                Extent3d {
-                    width: texture_atlas_size.width(),
-                    height: texture_atlas_size.height(),
-                    depth_or_array_layers: 1,
-                },
-                TextureDimension::D2,
-                vec![
-                    0;
-                    configuration.format.0.pixel_size()
-                        * (texture_atlas_size.width() * texture_atlas_size.height()) as usize
-                ],
-                texture_format,
-            );
-            let texture_atlas_textures: Vec<Rect> = rect_ids
-                .into_iter()
-                .map(|rect_id| {
-                    let image = images.get(rect_id.image_index).unwrap();
-                    let position = rect_id.position;
-
-                    let (_, packed_location) = rectangle_placements
-                        .packed_locations()
-                        .get(&rect_id)
-                        .unwrap();
-
-                    /* Fill out the texture atlas */
-                    copy_rect_image_to_texture_atlas(
-                        &mut texture_atlas_image,
-                        packed_location,
-                        image,
-                        position,
+                let rectangle_placements = loop {
+                    let mut target_bins = BTreeMap::new();
+                    target_bins.insert(
+                        0,
+                        TargetBin::new(texture_atlas_size.x(), texture_atlas_size.y(), 1),
                     );
+                    match pack_rects(
+                        &rects_to_place,
+                        &mut target_bins,
+                        &volume_heuristic,
+                        &contains_smallest_box,
+                    ) {
+                        Ok(rectangle_placements) => break rectangle_placements,
+                        Err(err) => {
+                            if texture_atlas_size >= configuration.max_size {
+                                /* TODO: Make word */
+                                /* return Err(SpriteSheetLoaderError::RectanglePackError(err)); */
+                                continue;
+                            }
+                            texture_atlas_size = TitanUVec2(
+                                (texture_atlas_size.x() * 2).min(configuration.max_size.x()),
+                                (texture_atlas_size.y() * 2).min(configuration.max_size.y()),
+                            );
+                        }
+                    }
+                };
 
-                    packed_location.as_rect()
-                })
-                .collect();
+                /* Create new image from rects and source images */
+                let texture_format = configuration.format.0;
+                let mut texture_atlas_image = Image::new(
+                    Extent3d {
+                        width: texture_atlas_size.width(),
+                        height: texture_atlas_size.height(),
+                        depth_or_array_layers: 1,
+                    },
+                    TextureDimension::D2,
+                    vec![
+                        0;
+                        configuration.format.0.pixel_size()
+                            * (texture_atlas_size.width() * texture_atlas_size.height()) as usize
+                    ],
+                    texture_format,
+                );
+                let texture_atlas_textures: Vec<Rect> = rect_ids
+                    .into_iter()
+                    .map(|rect_id| {
+                        let image = images.get(rect_id.image_index).unwrap();
+                        let position = rect_id.position;
+
+                        let (_, packed_location) = rectangle_placements
+                            .packed_locations()
+                            .get(&rect_id)
+                            .unwrap();
+
+                        /* Fill out the texture atlas */
+                        copy_rect_image_to_texture_atlas(
+                            &mut texture_atlas_image,
+                            packed_location,
+                            image,
+                            position,
+                        );
+
+                        packed_location.as_rect()
+                    })
+                    .collect();
+
+                (
+                    texture_atlas_size,
+                    texture_atlas_image,
+                    texture_atlas_textures,
+                )
+            } else {
+                (
+                    images[0].size().into(),
+                    images.remove(0),
+                    rect_ids.iter().map(|rect_id| rect_id.as_rect()).collect(),
+                )
+            };
 
             // Create a Handle from the Image
             let texture_atlas_image_size = texture_atlas_size.into();
@@ -335,23 +360,58 @@ struct Titan {
 
 #[derive(Debug, Deserialize)]
 struct TitanConfiguration {
+    #[serde(default = "default_initial_size")]
     initial_size: TitanUVec2,
+    #[serde(default = "default_max_size")]
     max_size: TitanUVec2,
+    #[serde(default = "default_format")]
     format: TitanTextureFormat,
+    #[serde(default = "default_auto_format_conversion")]
     auto_format_conversion: bool,
+    #[serde(default = "default_padding")]
     padding: TitanUVec2,
 }
 
 impl Default for TitanConfiguration {
     fn default() -> Self {
         Self {
-            initial_size: TitanUVec2(256, 265),
-            max_size: TitanUVec2(2048, 2048),
-            format: TitanTextureFormat(TextureFormat::Rgba8UnormSrgb),
-            auto_format_conversion: true,
-            padding: TitanUVec2::ZERO,
+            initial_size: default_initial_size(),
+            max_size: default_max_size(),
+            format: default_format(),
+            auto_format_conversion: default_auto_format_conversion(),
+            padding: default_padding(),
         }
     }
+}
+
+#[inline]
+const fn default_initial_size() -> TitanUVec2 {
+    TitanUVec2(256, 265)
+}
+
+#[inline]
+const fn default_max_size() -> TitanUVec2 {
+    TitanUVec2(2048, 2048)
+}
+
+#[inline]
+const fn default_format() -> TitanTextureFormat {
+    TitanTextureFormat(TextureFormat::Rgba8UnormSrgb)
+}
+
+#[inline]
+const fn default_auto_format_conversion() -> bool {
+    true
+}
+
+#[inline]
+const fn default_padding() -> TitanUVec2 {
+    TitanUVec2::ZERO
+}
+
+#[inline]
+const fn default_offset() -> TitanUVec2 {
+    TitanUVec2::ZERO
 }
 
 #[derive(Debug)]
@@ -459,18 +519,18 @@ enum TitanSpriteSheet {
     #[default]
     None,
     Homogeneous {
-        tile_size: UVec2,
+        tile_size: TitanUVec2,
         columns: u32,
         rows: u32,
-        #[serde(default)]
-        padding: Option<UVec2>,
-        #[serde(default)]
-        offset: Option<UVec2>,
+        #[serde(default = "default_padding")]
+        padding: TitanUVec2,
+        #[serde(default = "default_offset")]
+        offset: TitanUVec2,
     },
     Heterogeneous(Vec<(TitanUVec2, TitanUVec2)>),
 }
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Ord, PartialOrd)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Ord, PartialOrd, Copy)]
 struct RectId {
     image_index: usize,
     position: TitanUVec2,
@@ -502,12 +562,6 @@ impl TitanUVec2 {
 
 impl From<UVec2> for TitanUVec2 {
     fn from(value: UVec2) -> Self {
-        Self(value.x, value.y)
-    }
-}
-
-impl From<&UVec2> for TitanUVec2 {
-    fn from(value: &UVec2) -> Self {
         Self(value.x, value.y)
     }
 }
@@ -559,6 +613,18 @@ impl AsRect for PackedLocation {
             max: Vec2::new(
                 (self.x() + self.width()) as f32,
                 (self.y() + self.height()) as f32,
+            ),
+        }
+    }
+}
+
+impl AsRect for RectId {
+    fn as_rect(&self) -> Rect {
+        Rect {
+            min: Vec2::new(self.position.x() as f32, self.position.y() as f32),
+            max: Vec2::new(
+                (self.position.x() + self.size.width()) as f32,
+                (self.position.y() + self.size.height()) as f32,
             ),
         }
     }
