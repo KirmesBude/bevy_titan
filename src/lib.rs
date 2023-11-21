@@ -59,6 +59,7 @@
 
 use bevy::{
     asset::{io::Reader, AssetLoader, AssetPath, AsyncReadExt, LoadContext, LoadDirectError},
+    log::warn,
     prelude::{App, AssetApp, Image, Plugin, Rect, UVec2, Vec2},
     render::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
@@ -105,8 +106,11 @@ pub enum SpriteSheetLoaderError {
     #[error("Loading from {0} does not provide Image")]
     NotAnImage(String),
     /// A FormatConversionError
-    #[error("TextureFormat Conversion failed for {0}: {1:?} to {2:?}")]
+    #[error("TextureFormat conversion failed for {0}: {1:?} to {2:?}")]
     FormatConversionError(String, TextureFormat, TextureFormat),
+    /// A IncompatibleFormatError
+    #[error("Placing texture {0} of format {1:?} into texture atlas of format {2:?}")]
+    IncompatibleFormatError(String, TextureFormat, TextureFormat),
 }
 
 /// File extension for spritesheet manifest files written in ron.
@@ -208,6 +212,13 @@ impl AssetLoader for SpriteSheetLoader {
                         ),
                     )?
                 } else {
+                    if image.texture_descriptor.format != configuration.format.0 {
+                        return Err(SpriteSheetLoaderError::IncompatibleFormatError(
+                            titan_entry.path.clone(),
+                            image.texture_descriptor.format,
+                            configuration.format.0,
+                        ));
+                    }
                     image
                 };
                 images.push(image);
