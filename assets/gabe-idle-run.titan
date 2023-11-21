@@ -1,46 +1,42 @@
-[
-    (
-        path: "gabe-idle-run.png",
-        sprite_sheet: Homogeneous (
-            tile_size: (
-                24,
-                24,
-            ),
-            columns: 7,
-            rows: 1,
-            // These can be optionally defined
-            /*
-            padding: (
-                2,
-                2,
-            ),
-            offset: (
-                10,
-                10,
-            ),
-            */
-        ),
-    ),
-/*
-    (
-        path: "", 
-        sprite_sheet: Heterogeneous (
-            [
-                (
-                    (
-                        x: 0,
-                        y: 0,
-                    ),
-                    (
-                        width: 0,
-                        height: 0,
-                    ),
+(
+    textures: [
+        (
+            path: "gabe-idle-run.png",
+            sprite_sheet: Homogeneous (
+                tile_size: (
+                    24,
+                    24,
                 ),
-            ]
+                columns: 7,
+                rows: 1,
+                // These can be optionally defined
+                /*
+                padding: (
+                    2,
+                    2,
+                ),
+                offset: (
+                    10,
+                    10,
+                ),
+                */
+            ),
         ),
-    ),
-    (
-        path: "", 
-    ),
-*/
-]
+    /*
+        (
+            path: "", 
+            sprite_sheet: Heterogeneous (
+                [
+                    (
+                        (0, 0),
+                        (0, 0),
+                    ),
+                ]
+            ),
+        ),
+        (
+            path: "", 
+        ),
+    */
+    ]
+)
