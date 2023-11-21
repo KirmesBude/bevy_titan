@@ -104,6 +104,9 @@ pub enum SpriteSheetLoaderError {
     /// A NotAnImage Error
     #[error("Loading from {0} does not provide Image")]
     NotAnImage(String),
+    /// A FormatConversionError
+    #[error("TextureFormat Conversion failed for {0}: {1:?} to {2:?}")]
+    FormatConversionError(String, TextureFormat, TextureFormat),
 }
 
 /// File extension for spritesheet manifest files written in ron.
@@ -124,6 +127,7 @@ impl AssetLoader for SpriteSheetLoader {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
             let titan = ron::de::from_bytes::<Titan>(&bytes)?;
+            let configuration = titan.configuration;
             let titan_entries = titan.textures;
 
             /* Save rect ids and images for later use */
@@ -195,6 +199,17 @@ impl AssetLoader for SpriteSheetLoader {
                 }
 
                 /* Save image to vec */
+                let image = if configuration.auto_format_conversion {
+                    image.convert(configuration.format.0).ok_or(
+                        SpriteSheetLoaderError::FormatConversionError(
+                            titan_entry.path.clone(),
+                            image.texture_descriptor.format,
+                            configuration.format.0,
+                        ),
+                    )?
+                } else {
+                    image
+                };
                 images.push(image);
             }
 
@@ -222,8 +237,7 @@ impl AssetLoader for SpriteSheetLoader {
             .unwrap();
 
             /* Create new image from rects and source images */
-            let pixel_format_size = 4; /* TODO: Proper */
-            let texture_format = TextureFormat::Rgba8UnormSrgb; /* TODO: Proper */
+            let texture_format = configuration.format.0;
             let mut texture_atlas_image = Image::new(
                 Extent3d {
                     width: texture_atlas_size.x,
@@ -231,7 +245,11 @@ impl AssetLoader for SpriteSheetLoader {
                     depth_or_array_layers: 1,
                 },
                 TextureDimension::D2,
-                vec![0; pixel_format_size * (texture_atlas_size.x * texture_atlas_size.y) as usize],
+                vec![
+                    0;
+                    configuration.format.0.pixel_size()
+                        * (texture_atlas_size.x * texture_atlas_size.y) as usize
+                ],
                 texture_format,
             );
             let texture_atlas_textures: Vec<Rect> = rect_ids
@@ -277,7 +295,6 @@ impl AssetLoader for SpriteSheetLoader {
     }
 }
 
-/* TODO: attributes like TextureAtlasBuilder */
 #[derive(Debug, Deserialize)]
 struct Titan {
     #[serde(default)]
@@ -291,7 +308,7 @@ struct TitanConfiguration {
     max_size: TitanUVec2,
     format: TitanTextureFormat,
     auto_format_conversion: bool,
-    padding: TitanUVec2, /* TODO: Another type? */
+    padding: TitanUVec2,
 }
 
 impl Default for TitanConfiguration {
