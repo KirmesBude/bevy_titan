@@ -58,7 +58,7 @@
 #![warn(unused_imports, missing_docs)]
 
 use bevy::{
-    asset::{io::Reader, AssetLoader, AssetPath, AsyncReadExt, LoadContext},
+    asset::{io::Reader, AssetLoader, AssetPath, AsyncReadExt, LoadContext, LoadDirectError},
     prelude::{App, AssetApp, Image, Plugin, Rect, UVec2, Vec2},
     render::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
@@ -98,6 +98,12 @@ pub enum SpriteSheetLoaderError {
     /// A [RON](ron) Error
     #[error("Could not parse RON: {0}")]
     RonSpannedError(#[from] ron::error::SpannedError),
+    /// A LoadDirect Error
+    #[error("Could not load: {0}")]
+    LoadDirectError(#[from] LoadDirectError),
+    /// A NotAnImage Error
+    #[error("Loading from {0} does not provide Image")]
+    NotAnImage(String),
 }
 
 /// File extension for spritesheet manifest files written in ron.
@@ -133,8 +139,10 @@ impl AssetLoader for SpriteSheetLoader {
             for (titan_entry_index, titan_entry) in titan_entries.into_iter().enumerate() {
                 /* Load the image */
                 let image_asset_path = AssetPath::from_path(Path::new(&titan_entry.path));
-                let image = load_context.load_direct(image_asset_path).await.unwrap(); /* TODO: return Result */
-                let image = image.take::<Image>().unwrap(); /* TODO: return Result */
+                let image = load_context.load_direct(image_asset_path).await?;
+                let image = image
+                    .take::<Image>()
+                    .ok_or(SpriteSheetLoaderError::NotAnImage(titan_entry.path.clone()))?;
 
                 /* Get and insert all rects */
                 match titan_entry.sprite_sheet {
