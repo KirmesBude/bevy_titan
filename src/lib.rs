@@ -111,11 +111,9 @@ pub enum SpriteSheetLoaderError {
     /// A IncompatibleFormatError
     #[error("Placing texture {0} of format {1:?} into texture atlas of format {2:?}")]
     IncompatibleFormatError(String, TextureFormat, TextureFormat),
-    /* TODO: Make work
     /// A RectanglePackError
-    #[error("Could not pack all rectangles for the given size: {0:?}")]
-    RectanglePackError(#[from] RectanglePackError),
-    */
+    #[error("Could not pack all rectangles for the given size: {0}")]
+    RectanglePackError(RectanglePackError),
     /// An NoEntriesError
     #[error("No entries were found")]
     NoEntriesError,
@@ -267,9 +265,7 @@ impl AssetLoader for SpriteSheetLoader {
                         Ok(rectangle_placements) => break rectangle_placements,
                         Err(err) => {
                             if texture_atlas_size >= configuration.max_size {
-                                /* TODO: Make word */
-                                /* return Err(SpriteSheetLoaderError::RectanglePackError(err)); */
-                                continue;
+                                return Err(SpriteSheetLoaderError::RectanglePackError(err));
                             }
                             texture_atlas_size = TitanUVec2(
                                 (texture_atlas_size.x() * 2).min(configuration.max_size.x()),
