@@ -28,7 +28,7 @@ fn main() {
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(path = "gabe-idle-run.titan")]
+    #[asset(path = "giga-texture-atlas.titan")]
     female_adventurer: Handle<TextureAtlas>,
 }
 
