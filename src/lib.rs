@@ -8,10 +8,10 @@
 //! ```rust,ignore
 //! Titan ( /* The explicit type name can be omitted */
 //!     configuration: ( /* This is optional */
-//!         always_pack: true, /* This is optional; false by default; If false, this will skip the texture packing step in case only a single texture is provided */ 
-//!         initial_size: (128, 128), /* This is optional; (256, 256) by default; Initial size for the packing algorithm */ 
-//!         max_size: (1024, 1024) , /* This is optional; (2048, 2048) by default; Max size for the packing algorithm */ 
-//!         format: "Rgba8UnormSrgb", /* This is optional; Rgba8UnormSrgb; TexureFormat (see bevy::render::render_resource::TextureFormat) of the resulting TextureAtlas Image */ 
+//!         always_pack: true, /* This is optional; false by default; If false, this will skip the texture packing step in case only a single texture is provided */
+//!         initial_size: (128, 128), /* This is optional; (256, 256) by default; Initial size for the packing algorithm */
+//!         max_size: (1024, 1024) , /* This is optional; (2048, 2048) by default; Max size for the packing algorithm */
+//!         format: "Rgba8UnormSrgb", /* This is optional; Rgba8UnormSrgb; TexureFormat (see bevy::render::render_resource::TextureFormat) of the resulting TextureAtlas Image */
 //!         auto_format_conversion: false, /* This is optional; true by default; Automatically converts all textures to the format provided */
 //!         padding: (2, 2), /* This is optional; (0, 0) by default; Padding between textures in the resulting TextureAtlas Image */
 //!     ),
@@ -22,7 +22,7 @@
 //!                 tile_size: (24, 24),
 //!                 columns: 7,
 //!                 rows: 1,
-//!                 offset: (10, 10), /* This is optional; (0, 0) by default; Offset from (0, 0) in the image that the first texture starts */ 
+//!                 offset: (10, 10), /* This is optional; (0, 0) by default; Offset from (0, 0) in the image that the first texture starts */
 //!                 padding: (2, 2), /* This is optional; (0, 0) by default; Padding on each side of the texture */
 //!             )
 //!         ),

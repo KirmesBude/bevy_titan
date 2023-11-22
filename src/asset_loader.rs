@@ -233,7 +233,7 @@ fn place_rects_and_create_texture_atlas_image(
     rect_ids: Vec<RectId>,
     configuration: TitanConfiguration,
 ) -> Result<(TitanUVec2, Image, Vec<Rect>), RectanglePackError> {
-    if configuration.always_pack || images.len() > 1 {
+    if configuration.always_pack || (images.len() > 1) {
         /* Query rect to place */
         let mut rects_to_place = GroupedRectsToPlace::<RectId>::new();
         rect_ids.iter().for_each(|rect_id| {
@@ -264,6 +264,7 @@ fn place_rects_and_create_texture_atlas_image(
             ) {
                 Ok(rectangle_placements) => break rectangle_placements,
                 Err(err) => {
+                    println!("failed");
                     if texture_atlas_size >= configuration.max_size {
                         return Err(err);
                     }

@@ -1,7 +1,10 @@
 (
     configuration: (
-        padding: (50, 50),
+        /* Lets see if we can optimize a bit */
+        initial_size: (64, 64),
+        padding: (4, 4),
     ),
+    /* The order is preserved */
     textures: [
         (
             path: "generic-rpg-vendor.png",
@@ -34,17 +37,6 @@
                 ),
                 columns: 7,
                 rows: 1,
-                // These can be optionally defined
-                /*
-                padding: (
-                    2,
-                    2,
-                ),
-                offset: (
-                    10,
-                    10,
-                ),
-                */
             ),
         ),
     ]

@@ -1,7 +1,7 @@
 (
     configuration: (
+        /* We decide to optimize the TextureAtlas */
         always_pack: true,
-        format: "Rgba8UnormSrgb",
         initial_size: (84, 84),
         max_size: (84, 84),
         padding: (2, 2)
@@ -16,7 +16,7 @@
                 ),
                 columns: 7,
                 rows: 1,
-                // These can be optionally defined
+                /* These can be optionally defined; Our spritesheet does not have offset or padding, though */
                 /*
                 padding: (
                     2,
@@ -29,21 +29,5 @@
                 */
             ),
         ),
-    /*
-        (
-            path: "", 
-            sprite_sheet: Heterogeneous (
-                [
-                    (
-                        (0, 0),
-                        (0, 0),
-                    ),
-                ]
-            ),
-        ),
-        (
-            path: "", 
-        ),
-    */
     ]
 )
