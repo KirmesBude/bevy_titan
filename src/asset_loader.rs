@@ -25,14 +25,14 @@ use crate::serde::{Titan, TitanConfiguration, TitanEntry, TitanSpriteSheet, Tita
 #[derive(Default)]
 pub struct SpriteSheetLoader;
 
-/* TODO: Catch if initial_size > max_size */
+/* TODO: Tests */
 /// Possible errors that can be produced by [`SpriteSheetLoader`]
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum SpriteSheetLoaderError {
     /// An [IO](std::io) Error
     #[error("Could not load file: {0}")]
-    Io(#[from] std::io::Error),
+    IoError(#[from] std::io::Error),
     /// A [RON](ron) Error
     #[error("Could not parse RON: {0}")]
     RonSpannedError(#[from] ron::error::SpannedError),
@@ -41,7 +41,7 @@ pub enum SpriteSheetLoaderError {
     LoadDirectError(#[from] LoadDirectError),
     /// A NotAnImage Error
     #[error("Loading from {0} does not provide Image")]
-    NotAnImage(String),
+    NotAnImageError(String),
     /// A FormatConversionError
     #[error("TextureFormat conversion failed for {0}: {1:?} to {2:?}")]
     FormatConversionError(String, TextureFormat, TextureFormat),
@@ -57,6 +57,9 @@ pub enum SpriteSheetLoaderError {
     /// An InvalidRectError
     #[error("InvalidRectError: {0}")]
     InvalidRectError(#[from] InvalidRectError),
+    /// An InvalidRectError
+    #[error("Configured initial size {0} is bigger than max size {1}")]
+    SizeMismatchError(UVec2, UVec2),
 }
 
 /// File extension for spritesheet manifest files written in ron.
@@ -77,9 +80,16 @@ impl AssetLoader for SpriteSheetLoader {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
             let titan = ron::de::from_bytes::<Titan>(&bytes)?;
-            let configuration = titan.configuration;
-            let titan_entries = titan.textures;
 
+            let configuration = titan.configuration;
+            if configuration.max_size < configuration.initial_size {
+                return Err(SpriteSheetLoaderError::SizeMismatchError(
+                    configuration.initial_size.into(),
+                    configuration.max_size.into(),
+                ));
+            }
+
+            let titan_entries = titan.textures;
             if titan_entries.is_empty() {
                 return Err(SpriteSheetLoaderError::NoEntriesError);
             }
@@ -101,9 +111,12 @@ impl AssetLoader for SpriteSheetLoader {
                 let titan_entry_path = titan_entry.path.clone();
                 let image_asset_path = AssetPath::from_path(Path::new(&titan_entry_path));
                 let image = load_context.load_direct(image_asset_path).await?;
-                let image = image
-                    .take::<Image>()
-                    .ok_or(SpriteSheetLoaderError::NotAnImage(titan_entry_path.clone()))?;
+                let image =
+                    image
+                        .take::<Image>()
+                        .ok_or(SpriteSheetLoaderError::NotAnImageError(
+                            titan_entry_path.clone(),
+                        ))?;
 
                 /* Get and insert all rects */
                 push_rect_ids(&mut rect_ids, titan_entry, titan_entry_index, image.size())?;
