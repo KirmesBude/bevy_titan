@@ -15,11 +15,11 @@ use bevy::{
 };
 use rectangle_pack::{
     contains_smallest_box, pack_rects, volume_heuristic, GroupedRectsToPlace, PackedLocation,
-    RectToInsert, RectanglePackError, TargetBin,
+    RectToInsert, RectanglePackError, RectanglePackOk, TargetBin,
 };
 use thiserror::Error;
 
-use crate::serde::{Titan, TitanSpriteSheet, TitanUVec2};
+use crate::serde::{Titan, TitanConfiguration, TitanEntry, TitanSpriteSheet, TitanUVec2};
 
 /// Loader for spritesheet manifest files written in ron. Loads a TextureAtlas asset.
 #[derive(Default)]
@@ -54,8 +54,8 @@ pub enum SpriteSheetLoaderError {
     #[error("No entries were found")]
     NoEntriesError,
     /// An InvalidRectError
-    #[error("Rect with position {0} and size {1} is invalid for image {2}")]
-    InvalidRectError(UVec2, UVec2, String),
+    #[error("InvalidRectError: {0}")]
+    InvalidRectError(#[from] InvalidRectError),
 }
 
 /// File extension for spritesheet manifest files written in ron.
@@ -83,7 +83,6 @@ impl AssetLoader for SpriteSheetLoader {
                 return Err(SpriteSheetLoaderError::NoEntriesError);
             }
 
-            /* Save rect ids and images for later use */
             let rect_ids_len = titan_entries.iter().fold(0, |acc, titan_entry| {
                 acc + match &titan_entry.sprite_sheet {
                     TitanSpriteSheet::None => 1,
@@ -98,83 +97,21 @@ impl AssetLoader for SpriteSheetLoader {
             let mut images = Vec::with_capacity(images_len);
             for (titan_entry_index, titan_entry) in titan_entries.into_iter().enumerate() {
                 /* Load the image */
-                let image_asset_path = AssetPath::from_path(Path::new(&titan_entry.path));
+                let titan_entry_path = titan_entry.path.clone();
+                let image_asset_path = AssetPath::from_path(Path::new(&titan_entry_path));
                 let image = load_context.load_direct(image_asset_path).await?;
                 let image = image
                     .take::<Image>()
-                    .ok_or(SpriteSheetLoaderError::NotAnImage(titan_entry.path.clone()))?;
+                    .ok_or(SpriteSheetLoaderError::NotAnImage(titan_entry_path.clone()))?;
 
                 /* Get and insert all rects */
-                match titan_entry.sprite_sheet {
-                    TitanSpriteSheet::None => {
-                        let rect_id = RectId {
-                            image_index: titan_entry_index,
-                            position: TitanUVec2::ZERO,
-                            size: image.size().into(),
-                        };
-                        rect_ids.push(rect_id);
-                    }
-                    TitanSpriteSheet::Homogeneous {
-                        tile_size,
-                        columns,
-                        rows,
-                        padding,
-                        offset,
-                    } => {
-                        for i in 0..rows {
-                            for j in 0..columns {
-                                /* TODO: Simplify with Add/Multiply implementations on TitanUVec2 */
-                                let x = j * tile_size.width()
-                                    + offset.x()
-                                    + ((1 + 2 * j) * padding.x());
-                                let y = i * tile_size.height()
-                                    + offset.y()
-                                    + ((1 + 2 * i) * padding.y());
-                                let position = TitanUVec2(x, y);
-
-                                let rect_id = RectId::new_with_validation(
-                                    titan_entry_index,
-                                    position,
-                                    tile_size,
-                                    image.size(),
-                                )
-                                .ok_or(
-                                    SpriteSheetLoaderError::InvalidRectError(
-                                        position.into(),
-                                        tile_size.into(),
-                                        titan_entry.path.clone(),
-                                    ),
-                                )?;
-
-                                rect_ids.push(rect_id);
-                            }
-                        }
-                    }
-                    TitanSpriteSheet::Heterogeneous(rects) => {
-                        for (position, size) in rects {
-                            let rect_id = RectId::new_with_validation(
-                                titan_entry_index,
-                                position,
-                                size,
-                                image.size(),
-                            )
-                            .ok_or(
-                                SpriteSheetLoaderError::InvalidRectError(
-                                    position.into(),
-                                    size.into(),
-                                    titan_entry.path.clone(),
-                                ),
-                            )?;
-                            rect_ids.push(rect_id);
-                        }
-                    }
-                }
+                push_rect_ids(&mut rect_ids, titan_entry, titan_entry_index, image.size())?;
 
                 /* Save image to vec */
                 let image = if configuration.auto_format_conversion {
                     image.convert(*configuration.format).ok_or(
                         SpriteSheetLoaderError::FormatConversionError(
-                            titan_entry.path.clone(),
+                            titan_entry_path,
                             image.texture_descriptor.format,
                             *configuration.format,
                         ),
@@ -182,7 +119,7 @@ impl AssetLoader for SpriteSheetLoader {
                 } else {
                     if image.texture_descriptor.format != *configuration.format {
                         return Err(SpriteSheetLoaderError::IncompatibleFormatError(
-                            titan_entry.path.clone(),
+                            titan_entry_path,
                             image.texture_descriptor.format,
                             *configuration.format,
                         ));
@@ -192,100 +129,8 @@ impl AssetLoader for SpriteSheetLoader {
                 images.push(image);
             }
 
-            let (texture_atlas_size, texture_atlas_image, texture_atlas_textures) = if images.len()
-                > 1
-            {
-                /* Query rect to place */
-                let mut rects_to_place = GroupedRectsToPlace::<RectId>::new();
-                rect_ids.iter().for_each(|rect_id| {
-                    let rect_to_insert =
-                        RectToInsert::new(rect_id.size.width(), rect_id.size.height(), 1);
-                    rects_to_place.push_rect(*rect_id, None, rect_to_insert);
-                });
-
-                /* Resolve the rect packing */
-                let mut texture_atlas_size = TitanUVec2(
-                    configuration.initial_size.width(),
-                    configuration.initial_size.height(),
-                );
-                let rectangle_placements = loop {
-                    let mut target_bins = BTreeMap::new();
-                    target_bins.insert(
-                        0,
-                        TargetBin::new(texture_atlas_size.x(), texture_atlas_size.y(), 1),
-                    );
-                    match pack_rects(
-                        &rects_to_place,
-                        &mut target_bins,
-                        &volume_heuristic,
-                        &contains_smallest_box,
-                    ) {
-                        Ok(rectangle_placements) => break rectangle_placements,
-                        Err(err) => {
-                            if texture_atlas_size >= configuration.max_size {
-                                return Err(SpriteSheetLoaderError::RectanglePackError(err));
-                            }
-                            texture_atlas_size = TitanUVec2(
-                                (texture_atlas_size.width() * 2)
-                                    .min(configuration.max_size.width()),
-                                (texture_atlas_size.height() * 2)
-                                    .min(configuration.max_size.height()),
-                            );
-                        }
-                    }
-                };
-
-                /* Create new image from rects and source images */
-                let texture_format = *configuration.format;
-                let mut texture_atlas_image = Image::new(
-                    Extent3d {
-                        width: texture_atlas_size.width(),
-                        height: texture_atlas_size.height(),
-                        depth_or_array_layers: 1,
-                    },
-                    TextureDimension::D2,
-                    vec![
-                        0;
-                        configuration.format.pixel_size()
-                            * (texture_atlas_size.width() * texture_atlas_size.height()) as usize
-                    ],
-                    texture_format,
-                );
-                let texture_atlas_textures: Vec<Rect> = rect_ids
-                    .into_iter()
-                    .map(|rect_id| {
-                        let image = images.get(rect_id.image_index).unwrap();
-                        let position = rect_id.position;
-
-                        let (_, packed_location) = rectangle_placements
-                            .packed_locations()
-                            .get(&rect_id)
-                            .unwrap();
-
-                        /* Fill out the texture atlas */
-                        copy_rect_image_to_texture_atlas(
-                            &mut texture_atlas_image,
-                            packed_location,
-                            image,
-                            position,
-                        );
-
-                        packed_location.as_rect()
-                    })
-                    .collect();
-
-                (
-                    texture_atlas_size,
-                    texture_atlas_image,
-                    texture_atlas_textures,
-                )
-            } else {
-                (
-                    images[0].size().into(),
-                    images.remove(0),
-                    rect_ids.iter().map(|rect_id| rect_id.as_rect()).collect(),
-                )
-            };
+            let (texture_atlas_size, texture_atlas_image, texture_atlas_textures) =
+                place_rects_and_create_texture_atlas_image(images, rect_ids, configuration)?;
 
             // Create a Handle from the Image
             let texture_atlas_image_size = texture_atlas_size.into();
@@ -304,6 +149,12 @@ impl AssetLoader for SpriteSheetLoader {
 
     fn extensions(&self) -> &[&str] {
         FILE_EXTENSIONS
+    }
+}
+
+impl From<RectanglePackError> for SpriteSheetLoaderError {
+    fn from(value: RectanglePackError) -> Self {
+        Self::RectanglePackError(value)
     }
 }
 
@@ -360,6 +211,186 @@ fn copy_rect_image_to_texture_atlas(
         texture_atlas.data[texture_atlas_begin..texture_atlas_end]
             .copy_from_slice(&image.data[data_begin..data_end]);
     }
+}
+
+fn place_rects_and_create_texture_atlas_image(
+    mut images: Vec<Image>,
+    rect_ids: Vec<RectId>,
+    configuration: TitanConfiguration,
+) -> Result<(TitanUVec2, Image, Vec<Rect>), RectanglePackError> {
+    if images.len() > 1 {
+        /* Query rect to place */
+        let mut rects_to_place = GroupedRectsToPlace::<RectId>::new();
+        rect_ids.iter().for_each(|rect_id| {
+            let rect_to_insert = RectToInsert::new(rect_id.size.width(), rect_id.size.height(), 1);
+            rects_to_place.push_rect(*rect_id, None, rect_to_insert);
+        });
+
+        /* Resolve the rect packing */
+        let mut texture_atlas_size = TitanUVec2(
+            configuration.initial_size.width(),
+            configuration.initial_size.height(),
+        );
+        let rectangle_placements = loop {
+            let mut target_bins = BTreeMap::new();
+            target_bins.insert(
+                0,
+                TargetBin::new(texture_atlas_size.x(), texture_atlas_size.y(), 1),
+            );
+            match pack_rects(
+                &rects_to_place,
+                &mut target_bins,
+                &volume_heuristic,
+                &contains_smallest_box,
+            ) {
+                Ok(rectangle_placements) => break rectangle_placements,
+                Err(err) => {
+                    if texture_atlas_size >= configuration.max_size {
+                        return Err(err);
+                    }
+                    texture_atlas_size = TitanUVec2(
+                        (texture_atlas_size.width() * 2).min(configuration.max_size.width()),
+                        (texture_atlas_size.height() * 2).min(configuration.max_size.height()),
+                    );
+                }
+            }
+        };
+
+        /* Create new image from rects and source images */
+        let (texture_atlas_image, texture_atlas_textures) = create_texture_atlas_image(
+            configuration,
+            texture_atlas_size,
+            rect_ids,
+            rectangle_placements,
+            images,
+        );
+
+        Ok((
+            texture_atlas_size,
+            texture_atlas_image,
+            texture_atlas_textures,
+        ))
+    } else {
+        Ok((
+            images[0].size().into(),
+            images.remove(0),
+            rect_ids.iter().map(|rect_id| rect_id.as_rect()).collect(),
+        ))
+    }
+}
+
+fn create_texture_atlas_image(
+    configuration: TitanConfiguration,
+    texture_atlas_size: TitanUVec2,
+    rect_ids: Vec<RectId>,
+    rectangle_placements: RectanglePackOk<RectId, u32>,
+    images: Vec<Image>,
+) -> (Image, Vec<Rect>) {
+    let texture_format = *configuration.format;
+    let mut texture_atlas_image = Image::new(
+        Extent3d {
+            width: texture_atlas_size.width(),
+            height: texture_atlas_size.height(),
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        vec![
+            0;
+            configuration.format.pixel_size()
+                * (texture_atlas_size.width() * texture_atlas_size.height()) as usize
+        ],
+        texture_format,
+    );
+    let texture_atlas_textures: Vec<Rect> = rect_ids
+        .into_iter()
+        .map(|rect_id| {
+            let image = images.get(rect_id.image_index).unwrap();
+            let position = rect_id.position;
+
+            let (_, packed_location) = rectangle_placements
+                .packed_locations()
+                .get(&rect_id)
+                .unwrap();
+
+            /* Fill out the texture atlas */
+            copy_rect_image_to_texture_atlas(
+                &mut texture_atlas_image,
+                packed_location,
+                image,
+                position,
+            );
+
+            packed_location.as_rect()
+        })
+        .collect();
+
+    (texture_atlas_image, texture_atlas_textures)
+}
+
+/// InvalidRectError
+#[derive(Debug, Error)]
+#[error("Rect with position {0} and size {1} is invalid for image {2}")]
+pub struct InvalidRectError(UVec2, UVec2, String);
+
+fn push_rect_ids(
+    rect_ids: &mut Vec<RectId>,
+    titan_entry: TitanEntry,
+    titan_entry_index: usize,
+    image_size: UVec2,
+) -> Result<(), InvalidRectError> {
+    match titan_entry.sprite_sheet {
+        TitanSpriteSheet::None => {
+            let rect_id = RectId {
+                image_index: titan_entry_index,
+                position: TitanUVec2::ZERO,
+                size: image_size.into(),
+            };
+            rect_ids.push(rect_id);
+        }
+        TitanSpriteSheet::Homogeneous {
+            tile_size,
+            columns,
+            rows,
+            padding,
+            offset,
+        } => {
+            for i in 0..rows {
+                for j in 0..columns {
+                    /* TODO: Simplify with Add/Multiply implementations on TitanUVec2 */
+                    let x = j * tile_size.width() + offset.x() + ((1 + 2 * j) * padding.x());
+                    let y = i * tile_size.height() + offset.y() + ((1 + 2 * i) * padding.y());
+                    let position = TitanUVec2(x, y);
+
+                    let rect_id = RectId::new_with_validation(
+                        titan_entry_index,
+                        position,
+                        tile_size,
+                        image_size,
+                    )
+                    .ok_or(InvalidRectError(
+                        position.into(),
+                        tile_size.into(),
+                        titan_entry.path.clone(),
+                    ))?;
+
+                    rect_ids.push(rect_id);
+                }
+            }
+        }
+        TitanSpriteSheet::Heterogeneous(rects) => {
+            for (position, size) in rects {
+                let rect_id =
+                    RectId::new_with_validation(titan_entry_index, position, size, image_size)
+                        .ok_or(InvalidRectError(
+                            position.into(),
+                            size.into(),
+                            titan_entry.path.clone(),
+                        ))?;
+                rect_ids.push(rect_id);
+            }
+        }
+    }
+    Ok(())
 }
 
 trait AsRect {
