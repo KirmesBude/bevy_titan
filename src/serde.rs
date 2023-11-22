@@ -1,7 +1,7 @@
 //! This module defines all types necessary for deserialization of titan ron files.
 //!
 
-use std::ops::Add;
+use std::ops::{Add, Mul};
 
 use bevy::{
     math::{UVec2, Vec2},
@@ -10,15 +10,17 @@ use bevy::{
 };
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub(crate) struct Titan {
     #[serde(default)]
     pub(crate) configuration: TitanConfiguration,
     pub(crate) textures: Vec<TitanEntry>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub(crate) struct TitanConfiguration {
+    #[serde(default)]
+    pub(crate) always_pack: bool,
     #[serde(default = "default_initial_size")]
     pub(crate) initial_size: TitanUVec2,
     #[serde(default = "default_max_size")]
@@ -28,12 +30,13 @@ pub(crate) struct TitanConfiguration {
     #[serde(default = "default_auto_format_conversion")]
     pub(crate) auto_format_conversion: bool,
     #[serde(default = "default_padding")]
-    pub(crate) padding: TitanUVec2, /* TODO: Implement padding */
+    pub(crate) padding: TitanUVec2,
 }
 
 impl Default for TitanConfiguration {
     fn default() -> Self {
         Self {
+            always_pack: bool::default(),
             initial_size: default_initial_size(),
             max_size: default_max_size(),
             format: default_format(),
@@ -43,17 +46,17 @@ impl Default for TitanConfiguration {
     }
 }
 
-#[derive(Debug, Deref)]
+#[derive(Debug, Deref, Clone)]
 pub(crate) struct TitanTextureFormat(TextureFormat);
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub(crate) struct TitanEntry {
     pub(crate) path: String,
     #[serde(default)]
     pub(crate) sprite_sheet: TitanSpriteSheet,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, Clone)]
 pub(crate) enum TitanSpriteSheet {
     #[default]
     None,
@@ -120,7 +123,23 @@ impl Add<TitanUVec2> for TitanUVec2 {
     type Output = Self;
 
     fn add(self, rhs: TitanUVec2) -> Self::Output {
-        TitanUVec2(self.0 + rhs.0, self.1 + rhs.1)
+        Self(self.0.add(rhs.0), self.1.add(rhs.1))
+    }
+}
+
+impl Mul<u32> for TitanUVec2 {
+    type Output = Self;
+
+    fn mul(self, rhs: u32) -> Self::Output {
+        Self(self.0.mul(rhs), self.1.mul(rhs))
+    }
+}
+
+impl Mul<TitanUVec2> for u32 {
+    type Output = TitanUVec2;
+
+    fn mul(self, rhs: TitanUVec2) -> Self::Output {
+        TitanUVec2(self.mul(rhs.0), self.mul(rhs.1))
     }
 }
 

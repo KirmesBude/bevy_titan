@@ -1,4 +1,7 @@
 (
+    configuration: (
+        padding: (50, 50),
+    ),
     textures: [
         (
             path: "generic-rpg-vendor.png",

@@ -1,7 +1,9 @@
 (
     configuration: (
-        initial_size: (72, 72),
-        max_size: (72, 72),
+        always_pack: true,
+        initial_size: (84, 84),
+        max_size: (84, 84),
+        padding: (2, 2)
     ),
     textures: [
         (

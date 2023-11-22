@@ -25,6 +25,7 @@ use crate::serde::{Titan, TitanConfiguration, TitanEntry, TitanSpriteSheet, Tita
 #[derive(Default)]
 pub struct SpriteSheetLoader;
 
+/* TODO: Catch if initial_size > max_size */
 /// Possible errors that can be produced by [`SpriteSheetLoader`]
 #[non_exhaustive]
 #[derive(Debug, Error)]
@@ -187,16 +188,17 @@ impl RectId {
 }
 
 fn copy_rect_image_to_texture_atlas(
+    configuration: &TitanConfiguration,
     texture_atlas: &mut Image,
     location: &PackedLocation,
     image: &Image,
     position: TitanUVec2,
 ) {
     let format_size = texture_atlas.texture_descriptor.format.pixel_size();
-    let rect_x = location.x() as usize;
-    let rect_y = location.y() as usize;
-    let rect_width = location.width() as usize;
-    let rect_height = location.height() as usize;
+    let rect_x = (location.x() + configuration.padding.x()) as usize;
+    let rect_y = (location.y() + configuration.padding.y()) as usize;
+    let rect_width = (location.width() - 2 * configuration.padding.x()) as usize;
+    let rect_height = (location.height() - 2 * configuration.padding.y()) as usize;
     let texture_atlas_width = texture_atlas.width() as usize;
 
     /* Copy over from rect image, row by row */
@@ -218,11 +220,15 @@ fn place_rects_and_create_texture_atlas_image(
     rect_ids: Vec<RectId>,
     configuration: TitanConfiguration,
 ) -> Result<(TitanUVec2, Image, Vec<Rect>), RectanglePackError> {
-    if images.len() > 1 {
+    if configuration.always_pack || images.len() > 1 {
         /* Query rect to place */
         let mut rects_to_place = GroupedRectsToPlace::<RectId>::new();
         rect_ids.iter().for_each(|rect_id| {
-            let rect_to_insert = RectToInsert::new(rect_id.size.width(), rect_id.size.height(), 1);
+            let rect_to_insert = RectToInsert::new(
+                rect_id.size.width() + 2 * configuration.padding.x(),
+                rect_id.size.height() + 2 * configuration.padding.y(),
+                1,
+            );
             rects_to_place.push_rect(*rect_id, None, rect_to_insert);
         });
 
@@ -235,7 +241,7 @@ fn place_rects_and_create_texture_atlas_image(
             let mut target_bins = BTreeMap::new();
             target_bins.insert(
                 0,
-                TargetBin::new(texture_atlas_size.x(), texture_atlas_size.y(), 1),
+                TargetBin::new(texture_atlas_size.width(), texture_atlas_size.height(), 1),
             );
             match pack_rects(
                 &rects_to_place,
@@ -314,6 +320,7 @@ fn create_texture_atlas_image(
 
             /* Fill out the texture atlas */
             copy_rect_image_to_texture_atlas(
+                &configuration,
                 &mut texture_atlas_image,
                 packed_location,
                 image,
