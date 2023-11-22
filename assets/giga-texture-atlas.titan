@@ -1,0 +1,43 @@
+(
+    configuration: (
+        /* Lets see if we can optimize a bit */
+        initial_size: (64, 64),
+        padding: (4, 4),
+    ),
+    /* The order is preserved */
+    textures: [
+        (
+            path: "generic-rpg-vendor.png",
+        ),
+        (
+            path: "mani-idle-run.png",
+            sprite_sheet: Heterogeneous (
+                [
+                    (
+                        (0, 0),
+                        (24, 24),
+                    ),
+                    (
+                        (48, 0),
+                        (24, 24),
+                    ),
+                    (
+                        (96, 0),
+                        (24, 24),
+                    ),
+                ]
+            ),
+        ),
+        (
+            path: "gabe-idle-run.png",
+            sprite_sheet: Homogeneous (
+                tile_size: (
+                    24,
+                    24,
+                ),
+                columns: 7,
+                rows: 1,
+            ),
+        ),
+    ]
+)

@@ -1,30 +1,52 @@
-//! This crate allows you to directly load a TextureAtlas from a manifest file.
+//! This crate allows you to directly load a TextureAtlas from a titan ron file.
 //!
-//! `bevy_titan` introduces a [`SpriteSheetManifest`](crate::SpriteSheetManifest) and the corresponding [`SpriteSheetLoader`](crate::SpriteSheetLoader).
+//! `bevy_titan` introduces a definition of a titan ron file and the corresponding [`SpriteSheetLoader`](crate::asset_loader::SpriteSheetLoader).
 //! Assets with the 'titan' extension can be loaded just like any other asset via the [`AssetServer`](::bevy::asset::AssetServer)
 //! and will yield a [`TextureAtlas`](::bevy::sprite::TextureAtlas) [`Handle`](::bevy::asset::Handle).
 //!
 //! ### `spritesheet.titan`
 //! ```rust,ignore
-//! SpriteSheetManifest ( /* The explicit type name can be omitted */
-//!     path: String, /* path to spritesheet image asset */
-//!     tile_size: (
-//!         w: f32,
-//!         h: f32,
+//! Titan ( /* The explicit type name can be omitted */
+//!     configuration: ( /* This is optional */
+//!         always_pack: true, /* This is optional; false by default; If false, this will skip the texture packing step in case only a single texture is provided */
+//!         initial_size: (128, 128), /* This is optional; (256, 256) by default; Initial size for the packing algorithm */
+//!         max_size: (1024, 1024) , /* This is optional; (2048, 2048) by default; Max size for the packing algorithm */
+//!         format: "Rgba8UnormSrgb", /* This is optional; Rgba8UnormSrgb; TexureFormat (see bevy::render::render_resource::TextureFormat) of the resulting TextureAtlas Image */
+//!         auto_format_conversion: false, /* This is optional; true by default; Automatically converts all textures to the format provided */
+//!         padding: (2, 2), /* This is optional; (0, 0) by default; Padding between textures in the resulting TextureAtlas Image */
 //!     ),
-//!     columns: usize,
-//!     rows: usize,
-//!    // These can be optionally defined
-//!    /*
-//!    padding: (
-//!        h: f32,
-//!        w: f32,
-//!    ),
-//!    offset: (
-//!        h: f32,
-//!        w: f32,
-//!    ),
-//!    */
+//!     textures: [ /* This is mandatory and needs to contain at least one entry */
+//!         (
+//!             path: "homogeneous_sprite_sheet.png", /* Path to an image from AssetFolder */
+//!             sprite_sheet: Homogeneous (
+//!                 tile_size: (24, 24),
+//!                 columns: 7,
+//!                 rows: 1,
+//!                 offset: (10, 10), /* This is optional; (0, 0) by default; Offset from (0, 0) in the image that the first texture starts */
+//!                 padding: (2, 2), /* This is optional; (0, 0) by default; Padding on each side of the texture */
+//!             )
+//!         ),
+//!         (
+//!             path: "heterogeneous_sprite_sheet.png", /* Path to an image from AssetFolder */
+//!             sprite_sheet: Heterogeneous (
+//!                 [
+//!                     (
+//!                         (0, 0), /* Position that this texture inside the image starts (from top left) */
+//!                         (24, 24) /* Size of the texture */
+//!                     ),
+//!                     (
+//!                         (24, 0),
+//!                         (24, 24)
+//!                     ),
+//!                     /* You can continue with as many textures as you want */
+//!                 ]
+//!             )
+//!         ),
+//!         (
+//!             path: "sprite.png", /* Path to an image from AssetFolder */
+//!             sprite_sheet: None, /* Can be omitted for single images */
+//!         )
+//!     ]
 //! )
 //! ```
 //!
@@ -58,110 +80,23 @@
 #![warn(unused_imports, missing_docs)]
 
 use bevy::{
-    asset::{io::Reader, AssetLoader, AssetPath, AsyncReadExt, LoadContext},
-    prelude::{App, AssetApp, Handle, Image, Plugin, Vec2},
-    sprite::TextureAtlas,
-    utils::BoxedFuture,
+    asset::AssetApp,
+    prelude::{App, Plugin},
 };
-use serde::Deserialize;
-use std::path::Path;
-use thiserror::Error;
+
+pub mod asset_loader;
+pub mod serde;
 
 /// Adds support for spritesheet manifest files loading to the app.
 pub struct SpriteSheetLoaderPlugin;
 
 impl Plugin for SpriteSheetLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.init_asset_loader::<SpriteSheetLoader>();
+        app.init_asset_loader::<asset_loader::SpriteSheetLoader>();
     }
 }
 
-/// Loader for spritesheet manifest files written in ron. Loads a TextureAtlas asset.
-#[derive(Default)]
-pub struct SpriteSheetLoader;
-
-/// Possible errors that can be produced by [`SpriteSheetLoader`]
-#[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum SpriteSheetLoaderError {
-    /// An [IO](std::io) Error
-    #[error("Could not load file: {0}")]
-    Io(#[from] std::io::Error),
-    /// A [RON](ron) Error
-    #[error("Could not parse RON: {0}")]
-    RonSpannedError(#[from] ron::error::SpannedError),
-}
-
-/// File extension for spritesheet manifest files written in ron.
-pub const FILE_EXTENSIONS: &[&str] = &["titan"];
-
-impl AssetLoader for SpriteSheetLoader {
-    type Asset = TextureAtlas;
-    type Settings = ();
-    type Error = SpriteSheetLoaderError;
-
-    fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader,
-        _settings: &'a (),
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let spritesheet_manifest = ron::de::from_bytes::<SpriteSheetManifest>(&bytes)?;
-
-            let image_asset_path = AssetPath::from_path(Path::new(&spritesheet_manifest.path));
-            let image_handle: Handle<Image> = load_context.load(image_asset_path.clone());
-
-            let texture_atlas = TextureAtlas::from_grid(
-                image_handle,
-                spritesheet_manifest.tile_size.into(),
-                spritesheet_manifest.columns,
-                spritesheet_manifest.rows,
-                spritesheet_manifest.padding.map(|x| x.into()),
-                spritesheet_manifest.offset.map(|x| x.into()),
-            );
-
-            Ok(texture_atlas)
-        })
-    }
-
-    fn extensions(&self) -> &[&str] {
-        FILE_EXTENSIONS
-    }
-}
-
-/// Declaration of the deserialized struct from the spritesheet manifest file written in ron.
-/// Note: This is only public for the purpose to document the ron/titan format.
-#[derive(Debug, Deserialize)]
-pub struct SpriteSheetManifest {
-    /// Path to the spritesheet image asset.
-    pub path: String,
-    /// Width and height of a tile inside the spritesheet.
-    pub tile_size: Rect,
-    /// How many columns of tiles there are inside the spritesheet.
-    pub columns: usize,
-    /// How many rows of tiles there are inside the spritesheet.
-    pub rows: usize,
-    #[serde(default)]
-    /// Padding between tiles.
-    pub padding: Option<Rect>,
-    #[serde(default)]
-    /// Offset from the top left from where the tiling begins.
-    pub offset: Option<Rect>,
-}
-
-/// Helper struct to represent Vec2.
-/// Note: This is only public for the purpose to document the ron/titan format.
-#[derive(Debug, Deserialize)]
-pub struct Rect {
-    w: f32,
-    h: f32,
-}
-
-impl From<Rect> for Vec2 {
-    fn from(value: Rect) -> Self {
-        Self::new(value.w, value.h)
-    }
+/// `use bevy_titan::prelude::*;` to import common components and plugins.
+pub mod prelude {
+    pub use crate::SpriteSheetLoaderPlugin;
 }
