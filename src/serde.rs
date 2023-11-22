@@ -1,6 +1,8 @@
 //! This module defines all types necessary for deserialization of titan ron files.
 //!
 
+use std::ops::Add;
+
 use bevy::{
     math::{UVec2, Vec2},
     prelude::Deref,
@@ -96,12 +98,29 @@ impl From<UVec2> for TitanUVec2 {
     }
 }
 
+impl From<TitanUVec2> for UVec2 {
+    fn from(value: TitanUVec2) -> Self {
+        Self {
+            x: value.0,
+            y: value.1,
+        }
+    }
+}
+
 impl From<TitanUVec2> for Vec2 {
     fn from(value: TitanUVec2) -> Self {
         Self {
             x: value.0 as f32,
             y: value.1 as f32,
         }
+    }
+}
+
+impl Add<TitanUVec2> for TitanUVec2 {
+    type Output = Self;
+
+    fn add(self, rhs: TitanUVec2) -> Self::Output {
+        TitanUVec2(self.0 + rhs.0, self.1 + rhs.1)
     }
 }
 

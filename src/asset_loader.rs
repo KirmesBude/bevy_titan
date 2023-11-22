@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, path::Path};
 
 use bevy::{
     asset::{io::Reader, AssetLoader, AssetPath, AsyncReadExt, LoadContext, LoadDirectError},
-    math::{Rect, Vec2},
+    math::{Rect, UVec2, Vec2},
     render::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::{Image, TextureFormatPixelInfo},
@@ -25,8 +25,6 @@ use crate::serde::{Titan, TitanSpriteSheet, TitanUVec2};
 #[derive(Default)]
 pub struct SpriteSheetLoader;
 
-/* TODO: Implement Error for non image asset in path */
-/* TODO: Implement Error for invalid sprite_sheet values for Homogeneous and Heterogeneous */
 /// Possible errors that can be produced by [`SpriteSheetLoader`]
 #[non_exhaustive]
 #[derive(Debug, Error)]
@@ -55,6 +53,9 @@ pub enum SpriteSheetLoaderError {
     /// An NoEntriesError
     #[error("No entries were found")]
     NoEntriesError,
+    /// An InvalidRectError
+    #[error("Rect with position {0} and size {1} is invalid for image {2}")]
+    InvalidRectError(UVec2, UVec2, String),
 }
 
 /// File extension for spritesheet manifest files written in ron.
@@ -122,31 +123,50 @@ impl AssetLoader for SpriteSheetLoader {
                     } => {
                         for i in 0..rows {
                             for j in 0..columns {
+                                /* TODO: Simplify with Add/Multiply implementations on TitanUVec2 */
                                 let x = j * tile_size.width()
                                     + offset.x()
                                     + ((1 + 2 * j) * padding.x());
                                 let y = i * tile_size.height()
                                     + offset.y()
                                     + ((1 + 2 * i) * padding.y());
+                                let position = TitanUVec2(x, y);
 
-                                let rect_id = RectId {
-                                    image_index: titan_entry_index,
-                                    position: TitanUVec2(x, y),
-                                    size: tile_size,
-                                };
+                                let rect_id = RectId::new_with_validation(
+                                    titan_entry_index,
+                                    position,
+                                    tile_size,
+                                    image.size(),
+                                )
+                                .ok_or(
+                                    SpriteSheetLoaderError::InvalidRectError(
+                                        position.into(),
+                                        tile_size.into(),
+                                        titan_entry.path.clone(),
+                                    ),
+                                )?;
+
                                 rect_ids.push(rect_id);
                             }
                         }
                     }
                     TitanSpriteSheet::Heterogeneous(rects) => {
-                        rects.into_iter().for_each(|(position, size)| {
-                            let rect_id = RectId {
-                                image_index: titan_entry_index,
+                        for (position, size) in rects {
+                            let rect_id = RectId::new_with_validation(
+                                titan_entry_index,
                                 position,
                                 size,
-                            };
+                                image.size(),
+                            )
+                            .ok_or(
+                                SpriteSheetLoaderError::InvalidRectError(
+                                    position.into(),
+                                    size.into(),
+                                    titan_entry.path.clone(),
+                                ),
+                            )?;
                             rect_ids.push(rect_id);
-                        })
+                        }
                     }
                 }
 
@@ -294,6 +314,27 @@ struct RectId {
     size: TitanUVec2,
 }
 
+impl RectId {
+    fn new_with_validation(
+        image_index: usize,
+        position: TitanUVec2,
+        size: TitanUVec2,
+        image_size: UVec2,
+    ) -> Option<Self> {
+        let bound: UVec2 = (position + size).into();
+
+        if (bound.x > image_size.x) || (bound.y > image_size.y) {
+            None
+        } else {
+            Some(Self {
+                image_index,
+                position,
+                size,
+            })
+        }
+    }
+}
+
 fn copy_rect_image_to_texture_atlas(
     texture_atlas: &mut Image,
     location: &PackedLocation,
@@ -340,11 +381,8 @@ impl AsRect for PackedLocation {
 impl AsRect for RectId {
     fn as_rect(&self) -> Rect {
         Rect {
-            min: Vec2::new(self.position.x() as f32, self.position.y() as f32),
-            max: Vec2::new(
-                (self.position.x() + self.size.width()) as f32,
-                (self.position.y() + self.size.height()) as f32,
-            ),
+            min: self.position.into(),
+            max: (self.position + self.size).into(),
         }
     }
 }
