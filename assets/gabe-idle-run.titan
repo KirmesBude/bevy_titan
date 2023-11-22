@@ -1,6 +1,7 @@
 (
     configuration: (
         always_pack: true,
+        format: "Rgba8UnormSrgb",
         initial_size: (84, 84),
         max_size: (84, 84),
         padding: (2, 2)

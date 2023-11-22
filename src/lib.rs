@@ -1,30 +1,52 @@
-//! This crate allows you to directly load a TextureAtlas from a manifest file.
+//! This crate allows you to directly load a TextureAtlas from a titan ron file.
 //!
-//! `bevy_titan` introduces a [`SpriteSheetManifest`](crate::SpriteSheetManifest) and the corresponding [`SpriteSheetLoader`](crate::SpriteSheetLoader).
+//! `bevy_titan` introduces a definition of a titan ron file and the corresponding [`SpriteSheetLoader`](crate::asset_loader::SpriteSheetLoader).
 //! Assets with the 'titan' extension can be loaded just like any other asset via the [`AssetServer`](::bevy::asset::AssetServer)
 //! and will yield a [`TextureAtlas`](::bevy::sprite::TextureAtlas) [`Handle`](::bevy::asset::Handle).
 //!
 //! ### `spritesheet.titan`
 //! ```rust,ignore
-//! SpriteSheetManifest ( /* The explicit type name can be omitted */
-//!     path: String, /* path to spritesheet image asset */
-//!     tile_size: (
-//!         w: f32,
-//!         h: f32,
+//! Titan ( /* The explicit type name can be omitted */
+//!     configuration: ( /* This is optional */
+//!         always_pack: true, /* This is optional; false by default; If false, this will skip the texture packing step in case only a single texture is provided */ 
+//!         initial_size: (128, 128), /* This is optional; (256, 256) by default; Initial size for the packing algorithm */ 
+//!         max_size: (1024, 1024) , /* This is optional; (2048, 2048) by default; Max size for the packing algorithm */ 
+//!         format: "Rgba8UnormSrgb", /* This is optional; Rgba8UnormSrgb; TexureFormat (see bevy::render::render_resource::TextureFormat) of the resulting TextureAtlas Image */ 
+//!         auto_format_conversion: false, /* This is optional; true by default; Automatically converts all textures to the format provided */
+//!         padding: (2, 2), /* This is optional; (0, 0) by default; Padding between textures in the resulting TextureAtlas Image */
 //!     ),
-//!     columns: usize,
-//!     rows: usize,
-//!    // These can be optionally defined
-//!    /*
-//!    padding: (
-//!        h: f32,
-//!        w: f32,
-//!    ),
-//!    offset: (
-//!        h: f32,
-//!        w: f32,
-//!    ),
-//!    */
+//!     textures: [ /* This is mandatory and needs to contain at least one entry */
+//!         (
+//!             path: "homogeneous_sprite_sheet.png", /* Path to an image from AssetFolder */
+//!             sprite_sheet: Homogeneous (
+//!                 tile_size: (24, 24),
+//!                 columns: 7,
+//!                 rows: 1,
+//!                 offset: (10, 10), /* This is optional; (0, 0) by default; Offset from (0, 0) in the image that the first texture starts */ 
+//!                 padding: (2, 2), /* This is optional; (0, 0) by default; Padding on each side of the texture */
+//!             )
+//!         ),
+//!         (
+//!             path: "heterogeneous_sprite_sheet.png", /* Path to an image from AssetFolder */
+//!             sprite_sheet: Heterogeneous (
+//!                 [
+//!                     (
+//!                         (0, 0), /* Position that this texture inside the image starts (from top left) */
+//!                         (24, 24) /* Size of the texture */
+//!                     ),
+//!                     (
+//!                         (24, 0),
+//!                         (24, 24)
+//!                     ),
+//!                     /* You can continue with as many textures as you want */
+//!                 ]
+//!             )
+//!         ),
+//!         (
+//!             path: "sprite.png", /* Path to an image from AssetFolder */
+//!             sprite_sheet: None, /* Can be omitted for single images */
+//!         )
+//!     ]
 //! )
 //! ```
 //!

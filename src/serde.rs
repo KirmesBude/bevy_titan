@@ -178,7 +178,7 @@ impl<'de> Deserialize<'de> for TitanTextureFormat {
     where
         D: serde::Deserializer<'de>,
     {
-        let s = String::deserialize(deserializer)?.to_lowercase();
+        let s = String::deserialize(deserializer)?;
         let texture_format = match s.as_str() {
             "R8Unorm" => TextureFormat::R8Unorm,
             "R8Snorm" => TextureFormat::R8Snorm,
