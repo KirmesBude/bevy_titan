@@ -84,8 +84,8 @@ use bevy::{
     prelude::{App, Plugin},
 };
 
-pub mod asset_loader;
-pub mod serde;
+mod asset_loader;
+mod serde;
 
 /// Adds support for spritesheet manifest files loading to the app.
 pub struct SpriteSheetLoaderPlugin;
@@ -98,5 +98,6 @@ impl Plugin for SpriteSheetLoaderPlugin {
 
 /// `use bevy_titan::prelude::*;` to import common components and plugins.
 pub mod prelude {
+    pub use crate::asset_loader::SpriteSheetLoaderError;
     pub use crate::SpriteSheetLoaderPlugin;
 }

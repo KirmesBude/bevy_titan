@@ -23,7 +23,7 @@ use crate::serde::{Titan, TitanConfiguration, TitanEntry, TitanSpriteSheet, Tita
 
 /// Loader for spritesheet manifest files written in ron. Loads a TextureAtlas asset.
 #[derive(Default)]
-pub struct SpriteSheetLoader;
+pub(crate) struct SpriteSheetLoader;
 
 /* TODO: Tests */
 /// Possible errors that can be produced by [`SpriteSheetLoader`]

@@ -69,7 +69,7 @@ pub(crate) enum TitanSpriteSheet {
         #[serde(default = "default_offset")]
         offset: TitanUVec2,
     },
-    Heterogeneous(Vec<(TitanUVec2, TitanUVec2)>),
+    Heterogeneous(Vec<(TitanUVec2, TitanUVec2)>), /* TODO: This does not make is clear what is what. */
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Ord, PartialOrd, Copy, Deserialize)]
