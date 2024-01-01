@@ -1,5 +1,8 @@
-//! This module handles loading a TextureAtlas a titan ron file.
+//! This module handles loading a TextureAtlas from a titan ron file.
 //!
+//! `bevy_titan` introduces a definition of a titan ron file and the corresponding [`SpriteSheetLoader`](crate::asset_loader::SpriteSheetLoader).
+//! Assets with the 'titan' extension can be loaded just like any other asset via the [`AssetServer`](::bevy::asset::AssetServer)
+//! and will yield a [`TextureAtlas`](::bevy::sprite::TextureAtlas) [`Handle`](::bevy::asset::Handle).
 
 use std::{collections::BTreeMap, path::Path};
 
@@ -23,10 +26,10 @@ use crate::serde::{Titan, TitanConfiguration, TitanEntry, TitanSpriteSheet, Tita
 
 /// Loader for spritesheet manifest files written in ron. Loads a TextureAtlas asset.
 #[derive(Default)]
-pub(crate) struct SpriteSheetLoader;
+pub struct SpriteSheetLoader;
 
 /* TODO: Tests */
-/// Possible errors that can be produced by [`SpriteSheetLoader`]
+/// Possible errors that can be produced by [`SpriteSheetLoader`].
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum SpriteSheetLoaderError {
@@ -51,13 +54,13 @@ pub enum SpriteSheetLoaderError {
     /// A RectanglePackError
     #[error("Could not pack all rectangles for the given size: {0}")]
     RectanglePackError(RectanglePackError),
-    /// An NoEntriesError
+    /// A NoEntriesError
     #[error("No entries were found")]
     NoEntriesError,
     /// An InvalidRectError
     #[error("InvalidRectError: {0}")]
     InvalidRectError(#[from] InvalidRectError),
-    /// An InvalidRectError
+    /// A SizeMismatchError
     #[error("Configured initial size {0} is bigger than max size {1}")]
     SizeMismatchError(UVec2, UVec2),
 }

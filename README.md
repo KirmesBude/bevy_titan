@@ -14,12 +14,104 @@
 
 ## What is bevy_titan?
 
-Simple plugin to load textures atlas from spritesheet manifest files written in ron.
+`bevy_titan` is a simple bevy plugin to load textures atlases from spritesheet manifest files written in ron.
 It also supports creating a texture atlas from multiple sprites and even multiple sprite sheets.
+This library is powered by [rectangle-pack](https://crates.io/crates/rectangle-pack).
 
-## How to use?
+## Quickstart
 
-Check the examples for usage.
+
+```
+# In your Cargo.toml
+bevy_titan = "0.5"
+```
+
+### homogeneous-sprite-sheet.titan
+```rust
+//! A basic example of a titan file for a homogeneous sprite sheet.
+(
+    textures: [
+        (
+            path: "path-to-homogeneous-sprite-sheet",
+            sprite_sheet: Homogeneous (
+                tile_size: (
+                    32,
+                    32,
+                ),
+                columns: 4,
+                rows: 1,
+            ),
+        ),
+    ]
+)
+```
+
+### heterogeneous-sprite-sheet.titan
+```rust
+//! A basic example of a titan file for a heterogeneous sprite sheet.
+(
+    textures: [
+        (
+            path: "path-to-heterogeneous-sprite-sheet",
+            sprite_sheet: Heterogeneous (
+                [
+                    (
+                        (0, 0),
+                        (16, 16),
+                    ),
+                    (
+                        (16, 0),
+                        (32, 128),
+                    ),
+                    (
+                        (48, 0),
+                        (64, 16),
+                    ),
+                ]
+            ),
+        ),
+    ]
+)
+```
+
+### main.rs
+```rust
+//! A basic example of how to create a TextureAtlas asset from a titan file.
+use bevy::prelude::*;
+use bevy_titan::SpriteSheetLoaderPlugin;
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_plugins(SpriteSheetLoaderPlugin)
+        .add_systems(Startup, (setup, load_texture_atlas).chain())
+        .run();
+}
+
+/* Setup camera and other stuff */
+fn setup(...)
+
+fn load_texture_atlas(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(
+        SpriteSheetBundle {
+            texture_atlas: asset_server.load("example.titan"),
+            ..default()
+        }
+    );
+}
+```
+
+## Documentation
+
+[Full API Documentation](https://docs.rs/bevy_titan)
+
+[File format specifiction](docs/FileFormatSpecification.md)
+
+[Examples](examples)
+
+## Future Work
+
+* Make use of bevy's AssetProcessor.
 
 ## License
 
