@@ -17,9 +17,9 @@ Example                        | Description |
 [Using bevy_asset_loader]      | Simple example with [bevy_asset_loader]. |
 [Exploring TitanConfiguration] | Shows of how to use `bevy_titan`'s configuration to change how the asset is loaded. |
 
-[Homogeneous sprite sheet]: (examples/homogeneous_sprite_sheet)
-[Heterogeneous sprite sheet]: (examples/heterogeneous_sprite_sheet)
-[Composite texture atlas]: (examples/composite_texture_atlas)
-[Using bevy_asset_loader]: (examples/bevy_asset_loader)
-[Exploring TitanConfiguration]: (examples/titan_configuration)
-[bevy_asset_loader]: (https://crates.io/crates/bevy_asset_loader)
+[Homogeneous sprite sheet]: (examples/homogeneous_sprite_sheet.rs)
+[Heterogeneous sprite sheet]: (examples/heterogeneous_sprite_sheet.rs)
+[Composite texture atlas]: (examples/composite_texture_atlas.rs)
+[Using bevy_asset_loader]: (examples/bevy_asset_loader.rs)
+[Exploring TitanConfiguration]: (examples/titan_configuration.rs)
+[bevy_asset_loader]: (https://crates.io/crates/bevy_asset_loader.rs)
