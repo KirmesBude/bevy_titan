@@ -1,11 +1,4 @@
 (
-    configuration: (
-        /* We decide to optimize the TextureAtlas */
-        always_pack: true,
-        initial_size: (84, 84),
-        max_size: (84, 84),
-        padding: (2, 2)
-    ),
     textures: [
         (
             path: "gabe-idle-run.png",

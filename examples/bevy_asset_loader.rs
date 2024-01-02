@@ -18,7 +18,7 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
-        .add_systems(OnEnter(MyStates::Next), draw_atlas)
+        .add_systems(OnEnter(MyStates::Next), setup)
         .add_systems(
             Update,
             animate_sprite_system.run_if(in_state(MyStates::Next)),
@@ -28,40 +28,20 @@ fn main() {
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(path = "giga-texture-atlas.titan")]
-    female_adventurer: Handle<TextureAtlas>,
+    #[asset(path = "gabe-idle-run.titan")]
+    texture_atlas: Handle<TextureAtlas>,
 }
 
-fn draw_atlas(
-    mut commands: Commands,
-    my_assets: Res<MyAssets>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-) {
+fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     commands.spawn(Camera2dBundle::default());
-    // draw the original image (whole atlas)
-    let atlas = texture_atlases
-        .get(&my_assets.female_adventurer)
-        .expect("Failed to find our atlas");
-    commands.spawn(SpriteBundle {
-        texture: atlas.texture.clone(),
-        transform: Transform::from_xyz(0., -150., 0.),
-        ..Default::default()
-    });
-    // draw single texture from sprite sheet starting at index 0
-    commands
-        .spawn(SpriteSheetBundle {
-            transform: Transform {
-                translation: Vec3::new(0., 150., 0.),
-                ..Default::default()
-            },
-            sprite: TextureAtlasSprite::new(0),
-            texture_atlas: my_assets.female_adventurer.clone(),
-            ..Default::default()
-        })
-        .insert(AnimationTimer(Timer::from_seconds(
-            0.1,
-            TimerMode::Repeating,
-        )));
+    commands.spawn((
+        SpriteSheetBundle {
+            texture_atlas: my_assets.texture_atlas.clone(),
+            transform: Transform::from_scale(Vec3::splat(6.0)),
+            ..default()
+        },
+        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+    ));
 }
 
 #[derive(Component)]

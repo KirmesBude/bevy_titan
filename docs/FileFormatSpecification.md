@@ -7,14 +7,14 @@
 | textures      | Vector of [TitanEntry] | mandatory | All textures of this texture atlas. Order is preserved when retrieving a specific sprite from the atlas by index. Can not be empty. |
 
 ## TitanConfiguration
-| Field                  | Type             | Necessity | Description |
-|------------------------|------------------|-----------|-------------|
-| always_pack            | bool             | optional  | Always construct a new image from all textures even if only a single texture was provided. |
-| initial_size           | [UVec2]*         | optional  | Starting size of the combined texture atlas for the packing process. Default value (256,256). |
-| max_size               | [UVec2]*         | optional  | Maximum size that the combined texture atlas is allowed to grow to during the packing process. Default value (2048,2048). |
-| format                 | [TextureFormat]* | optional  | Texture format of the combined texture atlas. Default value Rgba8UnormSrgb. |
-| auto_format_conversion | bool             | optional  | Automatically attempt to convert all textures into the texture format given for the combined texture atlas. Default value true. |
-| padding                | [UVec2]*         | optional  | Padding between the sprites in the combined texture atlas. Default value (0,0). |
+| Field                  | Type                       | Necessity | Description |
+|------------------------|----------------------------|-----------|-------------|
+| always_pack            | bool                       | optional  | Always construct a new image from all textures even if only a single texture was provided. |
+| initial_size           | [UVec2]*                   | optional  | Starting size of the combined texture atlas for the packing process. Default value (256,256). |
+| max_size               | [UVec2]*                   | optional  | Maximum size that the combined texture atlas is allowed to grow to during the packing process. Default value (2048,2048). |
+| format                 | String of [TextureFormat]* | optional  | Texture format of the combined texture atlas. Default value Rgba8UnormSrgb. |
+| auto_format_conversion | bool                       | optional  | Automatically attempt to convert all textures into the texture format given for the combined texture atlas. Default value true. |
+| padding                | [UVec2]*                   | optional  | Padding between the sprites in the combined texture atlas. Default value (0,0). |
 
 ## TitanEntry
 | Field        | Type               | Necessity | Description |

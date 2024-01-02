@@ -29,5 +29,17 @@ name = "homogeneous_sprite_sheet"
 path = "examples/homogeneous_sprite_sheet.rs"
 
 [[example]]
+name = "heterogeneous_sprite_sheet"
+path = "examples/heterogeneous_sprite_sheet.rs"
+
+[[example]]
+name = "composite_texture_atlas"
+path = "examples/composite_texture_atlas.rs"
+
+[[example]]
 name = "bevy_asset_loader"
 path = "examples/bevy_asset_loader.rs"
+
+[[example]]
+name = "titan_configuration"
+path = "examples/titan_configuration.rs"
