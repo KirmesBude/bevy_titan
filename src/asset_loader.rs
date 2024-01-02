@@ -28,42 +28,46 @@ use crate::serde::{Titan, TitanConfiguration, TitanEntry, TitanSpriteSheet, Tita
 #[derive(Default)]
 pub struct SpriteSheetLoader;
 
-/* TODO: Tests */
 /// Possible errors that can be produced by [`SpriteSheetLoader`].
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum SpriteSheetLoaderError {
-    /// An [IO](std::io) Error
+    /// An [IOError](std::io::Error).
     #[error("Could not load file: {0}")]
     IoError(#[from] std::io::Error),
-    /// A [RON](ron) Error
+    /// A [RonSpannedError](ron::error::SpannedError).
     #[error("Could not parse RON: {0}")]
     RonSpannedError(#[from] ron::error::SpannedError),
-    /// A LoadDirect Error
+    /// A [LoadDirectError](bevy::asset::LoadDirectError).
     #[error("Could not load: {0}")]
     LoadDirectError(#[from] LoadDirectError),
-    /// A NotAnImage Error
+    /// A NotAnImageError.
     #[error("Loading from {0} does not provide Image")]
     NotAnImageError(String),
-    /// A FormatConversionError
+    /// A FormatConversionError.
     #[error("TextureFormat conversion failed for {0}: {1:?} to {2:?}")]
     FormatConversionError(String, TextureFormat, TextureFormat),
-    /// A IncompatibleFormatError
+    /// A IncompatibleFormatError.
     #[error("Placing texture {0} of format {1:?} into texture atlas of format {2:?}")]
     IncompatibleFormatError(String, TextureFormat, TextureFormat),
-    /// A RectanglePackError
+    /// A [RectanglePackError](rectangle_pack::RectanglePackError).
     #[error("Could not pack all rectangles for the given size: {0}")]
     RectanglePackError(RectanglePackError),
     /// A NoEntriesError
     #[error("No entries were found")]
     NoEntriesError,
-    /// An InvalidRectError
+    /// An [InvalidRectError](InvalidRectError).
     #[error("InvalidRectError: {0}")]
     InvalidRectError(#[from] InvalidRectError),
-    /// A SizeMismatchError
+    /// A SizeMismatchError.
     #[error("Configured initial size {0} is bigger than max size {1}")]
     SizeMismatchError(UVec2, UVec2),
 }
+
+/// InvalidRectError.
+#[derive(Debug, Error)]
+#[error("Rect with position {0} and size {1} is invalid for image {2}")]
+pub struct InvalidRectError(UVec2, UVec2, String);
 
 /// File extension for spritesheet manifest files written in ron.
 pub const FILE_EXTENSIONS: &[&str] = &["titan"];
@@ -351,11 +355,6 @@ fn create_texture_atlas_image(
     (texture_atlas_image, texture_atlas_textures)
 }
 
-/// InvalidRectError
-#[derive(Debug, Error)]
-#[error("Rect with position {0} and size {1} is invalid for image {2}")]
-pub struct InvalidRectError(UVec2, UVec2, String);
-
 fn push_rect_ids(
     rect_ids: &mut Vec<RectId>,
     titan_entry: TitanEntry,
@@ -441,4 +440,7 @@ impl AsRect for RectId {
     }
 }
 
-/* TODO: tests */
+#[cfg(test)]
+mod tests {
+    /* TODO: Tests */
+}

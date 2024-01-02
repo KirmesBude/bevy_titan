@@ -21,13 +21,13 @@ This library is powered by [rectangle-pack](https://crates.io/crates/rectangle-p
 ## Quickstart
 
 
-```
+```toml, ignore
 # In your Cargo.toml
 bevy_titan = "0.5"
 ```
 
 ### homogeneous-sprite-sheet.titan
-```rust
+```rust, ignore
 //! A basic example of a titan file for a homogeneous sprite sheet.
 (
     textures: [
@@ -47,7 +47,7 @@ bevy_titan = "0.5"
 ```
 
 ### heterogeneous-sprite-sheet.titan
-```rust
+```rust, ignore
 //! A basic example of a titan file for a heterogeneous sprite sheet.
 (
     textures: [
@@ -75,7 +75,7 @@ bevy_titan = "0.5"
 ```
 
 ### main.rs
-```rust
+```rust, ignore
 //! A basic example of how to create a TextureAtlas asset from a titan file.
 use bevy::prelude::*;
 use bevy_titan::SpriteSheetLoaderPlugin;
