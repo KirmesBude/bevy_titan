@@ -380,10 +380,9 @@ fn push_rect_ids(
         } => {
             for i in 0..rows {
                 for j in 0..columns {
-                    /* TODO: Simplify with Add/Multiply implementations on TitanUVec2 */
-                    let x = j * tile_size.width() + offset.x() + ((1 + 2 * j) * padding.x());
-                    let y = i * tile_size.height() + offset.y() + ((1 + 2 * i) * padding.y());
-                    let position = TitanUVec2(x, y);
+                    let position = TitanUVec2(j, i) * tile_size
+                        + offset
+                        + (TitanUVec2(1 + 2 * j, 1 + 2 * i) * padding);
 
                     let rect_id = RectId::new_with_validation(
                         titan_entry_index,

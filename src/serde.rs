@@ -69,7 +69,7 @@ pub(crate) enum TitanSpriteSheet {
         #[serde(default = "default_offset")]
         offset: TitanUVec2,
     },
-    Heterogeneous(Vec<(TitanUVec2, TitanUVec2)>), /* TODO: This does not make is clear what is what. */
+    Heterogeneous(Vec<(TitanUVec2, TitanUVec2)>),
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Ord, PartialOrd, Copy, Deserialize)]
@@ -140,6 +140,14 @@ impl Mul<TitanUVec2> for u32 {
 
     fn mul(self, rhs: TitanUVec2) -> Self::Output {
         TitanUVec2(self.mul(rhs.0), self.mul(rhs.1))
+    }
+}
+
+impl Mul<TitanUVec2> for TitanUVec2 {
+    type Output = Self;
+
+    fn mul(self, rhs: TitanUVec2) -> Self::Output {
+        Self(self.0.mul(rhs.0), self.1.mul(rhs.1))
     }
 }
 
