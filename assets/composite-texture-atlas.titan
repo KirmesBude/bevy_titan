@@ -1,7 +1,7 @@
 (
     configuration: (
         /* Lets see if we can optimize a bit */
-        initial_size: (64, 64),
+        initial_size: (152, 152),
         padding: (4, 4),
     ),
     /* The order is preserved */
