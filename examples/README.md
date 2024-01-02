@@ -22,4 +22,4 @@ Example                        | Description |
 [Composite texture atlas]: (examples/composite_texture_atlas.rs)
 [Using bevy_asset_loader]: (examples/bevy_asset_loader.rs)
 [Exploring TitanConfiguration]: (examples/titan_configuration.rs)
-[bevy_asset_loader]: (https://crates.io/crates/bevy_asset_loader.rs)
+[bevy_asset_loader]: (https://crates.io/crates/bevy_asset_loader)

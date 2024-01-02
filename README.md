@@ -88,8 +88,9 @@ fn main() {
         .run();
 }
 
-/* Setup camera and other stuff */
-fn setup(...)
+fn setup() {
+    /* Setup camera and other stuff */
+}
 
 fn load_texture_atlas(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(
