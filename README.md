@@ -105,9 +105,9 @@ fn load_texture_atlas(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 [Full API Documentation](https://docs.rs/bevy_titan)
 
-[File format specifiction](docs/FileFormatSpecification.md)
+[File format specifiction](https://github.com/KirmesBude/bevy_titan/blob/main/docs/FileFormatSpecification.md)
 
-[Examples](examples)
+[Examples](https://github.com/KirmesBude/bevy_titan/tree/main/examples)
 
 ## Future Work
 
@@ -118,15 +118,15 @@ fn load_texture_atlas(mut commands: Commands, asset_server: Res<AssetServer>) {
 bevy_titan is free, open source and permissively licensed!
 Except where noted (below and/or in individual files), all code in this repository is dual-licensed under either:
 
-* MIT License ([LICENSE-MIT](LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
-* Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
+* MIT License ([LICENSE-MIT](https://github.com/KirmesBude/bevy_titan/blob/main/LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
+* Apache License, Version 2.0 ([LICENSE-APACHE](https://github.com/KirmesBude/bevy_titan/blob/main/LICENSE-APACHE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
 
 at your option.
 This means you can select the license you prefer!
 
 Some of the code was adapted from other sources.
-The [assets](assets) included in this repository fall under different open licenses.
-See [CREDITS.md](CREDITS.md) for the details of the origin of the adapted code and licenses of those files.
+The [assets](https://github.com/KirmesBude/bevy_titan/tree/main/assets) included in this repository fall under different open licenses.
+See [CREDITS.md](https://github.com/KirmesBude/bevy_titan/blob/main/CREDITS.md) for the details of the origin of the adapted code and licenses of those files.
 
 ### Your contributions
 

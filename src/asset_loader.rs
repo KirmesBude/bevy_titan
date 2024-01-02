@@ -1,8 +1,8 @@
 //! This module handles loading a TextureAtlas from a titan ron file.
 //!
-//! `bevy_titan` introduces a definition of a titan ron file and the corresponding [`SpriteSheetLoader`](crate::asset_loader::SpriteSheetLoader).
+//! `bevy_titan` introduces a definition of a titan ron file and the corresponding [`SpriteSheetLoader`].
 //! Assets with the 'titan' extension can be loaded just like any other asset via the [`AssetServer`](::bevy::asset::AssetServer)
-//! and will yield a [`TextureAtlas`](::bevy::sprite::TextureAtlas) [`Handle`](::bevy::asset::Handle).
+//! and will yield a [`TextureAtlas`] [`Handle`](::bevy::asset::Handle).
 
 use std::{collections::BTreeMap, path::Path};
 
@@ -38,7 +38,7 @@ pub enum SpriteSheetLoaderError {
     /// A [RonSpannedError](ron::error::SpannedError).
     #[error("Could not parse RON: {0}")]
     RonSpannedError(#[from] ron::error::SpannedError),
-    /// A [LoadDirectError](bevy::asset::LoadDirectError).
+    /// A [`LoadDirectError``].
     #[error("Could not load: {0}")]
     LoadDirectError(#[from] LoadDirectError),
     /// A NotAnImageError.
@@ -50,13 +50,13 @@ pub enum SpriteSheetLoaderError {
     /// A IncompatibleFormatError.
     #[error("Placing texture {0} of format {1:?} into texture atlas of format {2:?}")]
     IncompatibleFormatError(String, TextureFormat, TextureFormat),
-    /// A [RectanglePackError](rectangle_pack::RectanglePackError).
+    /// A [`RectanglePackError``].
     #[error("Could not pack all rectangles for the given size: {0}")]
     RectanglePackError(RectanglePackError),
     /// A NoEntriesError
     #[error("No entries were found")]
     NoEntriesError,
-    /// An [InvalidRectError](InvalidRectError).
+    /// An [`InvalidRectError``].
     #[error("InvalidRectError: {0}")]
     InvalidRectError(#[from] InvalidRectError),
     /// A SizeMismatchError.
