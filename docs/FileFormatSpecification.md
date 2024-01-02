@@ -27,7 +27,7 @@
 |---------------|-------------|
 | None          | Image asset is a single image. Default variant. |
 | Homogeneous   | Image asset is a homogeneous sprite sheet. |
-| Heterogeneous | Image asset is a heterogeneous sprite sheet. List of rects per sprite expressed by a tuple of [UVec2]*. |
+| Heterogeneous | Image asset is a heterogeneous sprite sheet. List of rects per sprite expressed by a tuple of [UVec2]*. The first member is the top left starting position of the rectangle and the second member is the width and the height.|
 
 ## TitanSpriteSheet::Homogeneous
 | Field     | Type     | Necessity | Description |
