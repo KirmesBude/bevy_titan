@@ -2,37 +2,23 @@
 //! Renders an animated sprite by loading all animation frames from a single image (a sprite sheet)
 //! into a texture atlas, and changing the displayed image periodically.
 
+#[path = "helpers/animation_helper.rs"]
+mod animation_helper;
+#[path = "helpers/texture_atlas_helper.rs"]
+mod texture_atlas_helper;
+
+use animation_helper::{animate_sprite, AnimationTimer};
 use bevy::prelude::*;
 use bevy_titan::SpriteSheetLoaderPlugin;
+use texture_atlas_helper::spawn_entire_texture_atlas;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(SpriteSheetLoaderPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, (animate_sprite, spawn_entire_texture_atlas))
+        .add_systems(Update, (spawn_entire_texture_atlas, animate_sprite))
         .run();
-}
-
-#[derive(Component, Deref, DerefMut)]
-struct AnimationTimer(Timer);
-
-fn animate_sprite(
-    time: Res<Time>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(
-        &mut AnimationTimer,
-        &mut TextureAtlasSprite,
-        &Handle<TextureAtlas>,
-    )>,
-) {
-    for (mut timer, mut sprite, texture_atlas_handle) in &mut query {
-        timer.tick(time.delta());
-        if timer.just_finished() {
-            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-            sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
-        }
-    }
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -47,26 +33,4 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ));
-}
-
-fn spawn_entire_texture_atlas(
-    mut commands: Commands,
-    mut asset_event_evr: EventReader<AssetEvent<TextureAtlas>>,
-    texture_atlas_assets: Res<Assets<TextureAtlas>>,
-) {
-    for ev in asset_event_evr.read() {
-        match ev {
-            AssetEvent::Added { id } => {
-                let texture_atlas = texture_atlas_assets.get(*id).unwrap();
-
-                commands.spawn(SpriteBundle {
-                    texture: texture_atlas.texture.clone(),
-                    transform: Transform::from_translation(Vec3::new(-300.0, 0.0, -1.0))
-                        .with_scale(Vec3::splat(3.0)),
-                    ..Default::default()
-                });
-            }
-            _ => {}
-        }
-    }
 }

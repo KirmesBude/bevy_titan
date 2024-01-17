@@ -2,6 +2,10 @@
 //! Renders an animated sprite by loading all animation frames from a single image (a sprite sheet)
 //! into a texture atlas, and changing the displayed image periodically.
 
+#[path = "helpers/animation_helper.rs"]
+mod animation_helper;
+
+use animation_helper::{animate_sprite, AnimationTimer};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_titan::SpriteSheetLoaderPlugin;
@@ -19,10 +23,7 @@ fn main() {
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .add_systems(OnEnter(MyStates::Next), setup)
-        .add_systems(
-            Update,
-            animate_sprite_system.run_if(in_state(MyStates::Next)),
-        )
+        .add_systems(Update, animate_sprite.run_if(in_state(MyStates::Next)))
         .run();
 }
 
@@ -42,21 +43,6 @@ fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
         },
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ));
-}
-
-#[derive(Component)]
-struct AnimationTimer(Timer);
-
-fn animate_sprite_system(
-    time: Res<Time>,
-    mut query: Query<(&mut AnimationTimer, &mut TextureAtlasSprite)>,
-) {
-    for (mut timer, mut sprite) in &mut query {
-        timer.0.tick(time.delta());
-        if timer.0.finished() {
-            sprite.index = (sprite.index + 1) % 7;
-        }
-    }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
