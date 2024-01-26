@@ -3,22 +3,13 @@
         (
             path: "gabe-idle-run.png",
             sprite_sheet: Homogeneous (
-                tile_size: (
-                    24,
-                    24,
-                ),
+                tile_size: (24, 24),
                 columns: 7,
                 rows: 1,
                 /* These can be optionally defined; Our spritesheet does not have offset or padding, though */
                 /*
-                padding: (
-                    2,
-                    2,
-                ),
-                offset: (
-                    10,
-                    10,
-                ),
+                padding: (2, 2),
+                offset: (10, 10),
                 */
             ),
         ),

@@ -16,9 +16,11 @@ exclude = ["/assets"]
 [dependencies]
 bevy = { version = "0.12", default-features = false, features=["bevy_asset", "bevy_render", "bevy_sprite"]}
 serde = { version = "1", features = ["derive"] }
-ron = "0.8"
-thiserror = "1"
 rectangle-pack = "0.4"
+thiserror = "1"
+ron = "0.8"
+# Sub dependencies of bevy; keep version in sync
+glam = { version = "0.24.1", default-features = false, features=["serde"]}
 
 [dev-dependencies]
 bevy = { version = "0.12", features = ["file_watcher"] }

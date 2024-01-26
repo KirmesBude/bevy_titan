@@ -1,13 +1,7 @@
 //! This module defines all types necessary for deserialization of titan ron files.
 //!
 
-use std::ops::{Add, Mul};
-
-use bevy::{
-    math::{UVec2, Vec2},
-    prelude::Deref,
-    render::render_resource::TextureFormat,
-};
+use bevy::{math::UVec2, prelude::Deref, render::render_resource::TextureFormat};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -22,15 +16,15 @@ pub(crate) struct TitanConfiguration {
     #[serde(default)]
     pub(crate) always_pack: bool,
     #[serde(default = "default_initial_size")]
-    pub(crate) initial_size: TitanUVec2,
+    pub(crate) initial_size: UVec2,
     #[serde(default = "default_max_size")]
-    pub(crate) max_size: TitanUVec2,
+    pub(crate) max_size: UVec2,
     #[serde(default = "default_format")]
     pub(crate) format: TitanTextureFormat,
     #[serde(default = "default_auto_format_conversion")]
     pub(crate) auto_format_conversion: bool,
     #[serde(default = "default_padding")]
-    pub(crate) padding: TitanUVec2,
+    pub(crate) padding: UVec2,
 }
 
 impl Default for TitanConfiguration {
@@ -61,104 +55,25 @@ pub(crate) enum TitanSpriteSheet {
     #[default]
     None,
     Homogeneous {
-        tile_size: TitanUVec2,
+        tile_size: UVec2,
         columns: u32,
         rows: u32,
         #[serde(default = "default_padding")]
-        padding: TitanUVec2,
+        padding: UVec2,
         #[serde(default = "default_offset")]
-        offset: TitanUVec2,
+        offset: UVec2,
     },
-    Heterogeneous(Vec<(TitanUVec2, TitanUVec2)>),
-}
-
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Ord, PartialOrd, Copy, Deserialize)]
-pub(crate) struct TitanUVec2(pub(crate) u32, pub(crate) u32);
-
-impl TitanUVec2 {
-    pub(crate) const ZERO: Self = Self(0, 0);
-
-    pub(crate) fn x(&self) -> u32 {
-        self.0
-    }
-
-    pub(crate) fn y(&self) -> u32 {
-        self.1
-    }
-
-    pub(crate) fn width(&self) -> u32 {
-        self.0
-    }
-
-    pub(crate) fn height(&self) -> u32 {
-        self.1
-    }
-}
-
-impl From<UVec2> for TitanUVec2 {
-    fn from(value: UVec2) -> Self {
-        Self(value.x, value.y)
-    }
-}
-
-impl From<TitanUVec2> for UVec2 {
-    fn from(value: TitanUVec2) -> Self {
-        Self {
-            x: value.0,
-            y: value.1,
-        }
-    }
-}
-
-impl From<TitanUVec2> for Vec2 {
-    fn from(value: TitanUVec2) -> Self {
-        Self {
-            x: value.0 as f32,
-            y: value.1 as f32,
-        }
-    }
-}
-
-impl Add<TitanUVec2> for TitanUVec2 {
-    type Output = Self;
-
-    fn add(self, rhs: TitanUVec2) -> Self::Output {
-        Self(self.0.add(rhs.0), self.1.add(rhs.1))
-    }
-}
-
-impl Mul<u32> for TitanUVec2 {
-    type Output = Self;
-
-    fn mul(self, rhs: u32) -> Self::Output {
-        Self(self.0.mul(rhs), self.1.mul(rhs))
-    }
-}
-
-impl Mul<TitanUVec2> for u32 {
-    type Output = TitanUVec2;
-
-    fn mul(self, rhs: TitanUVec2) -> Self::Output {
-        TitanUVec2(self.mul(rhs.0), self.mul(rhs.1))
-    }
-}
-
-impl Mul<TitanUVec2> for TitanUVec2 {
-    type Output = Self;
-
-    fn mul(self, rhs: TitanUVec2) -> Self::Output {
-        Self(self.0.mul(rhs.0), self.1.mul(rhs.1))
-    }
+    Heterogeneous(Vec<(UVec2, UVec2)>),
 }
 
 #[inline]
-const fn default_initial_size() -> TitanUVec2 {
-    TitanUVec2(256, 265)
+const fn default_initial_size() -> UVec2 {
+    UVec2::new(256, 265)
 }
 
 #[inline]
-const fn default_max_size() -> TitanUVec2 {
-    TitanUVec2(2048, 2048)
+const fn default_max_size() -> UVec2 {
+    UVec2::new(2048, 2048)
 }
 
 #[inline]
@@ -172,13 +87,13 @@ const fn default_auto_format_conversion() -> bool {
 }
 
 #[inline]
-const fn default_padding() -> TitanUVec2 {
-    TitanUVec2::ZERO
+const fn default_padding() -> UVec2 {
+    UVec2::ZERO
 }
 
 #[inline]
-const fn default_offset() -> TitanUVec2 {
-    TitanUVec2::ZERO
+const fn default_offset() -> UVec2 {
+    UVec2::ZERO
 }
 
 impl<'de> Deserialize<'de> for TitanTextureFormat {

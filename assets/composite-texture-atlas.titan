@@ -47,10 +47,7 @@
         (
             path: "gabe-idle-run.png",
             sprite_sheet: Homogeneous (
-                tile_size: (
-                    24,
-                    24,
-                ),
+                tile_size: (24, 24),
                 columns: 7,
                 rows: 1,
             ),
