@@ -7,13 +7,18 @@
 use std::{collections::BTreeMap, path::Path};
 
 use bevy::{
-    asset::{io::Reader, AssetLoader, AssetPath, AsyncReadExt, LoadContext, LoadDirectError},
+    asset::{
+        io::Reader, Asset, AssetLoader, AssetPath, AsyncReadExt, Handle, LoadContext,
+        LoadDirectError,
+    },
     math::{Rect, UVec2, Vec2},
+    reflect::TypePath,
     render::{
+        render_asset::RenderAssetPersistencePolicy,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::{Image, TextureFormatPixelInfo},
     },
-    sprite::TextureAtlas,
+    sprite::TextureAtlasLayout,
     utils::BoxedFuture,
 };
 use rectangle_pack::{
@@ -71,6 +76,15 @@ pub struct InvalidRectError(UVec2, UVec2, String);
 
 /// File extension for spritesheet manifest files written in ron.
 pub const FILE_EXTENSIONS: &[&str] = &["titan"];
+
+/// TextureAtlas Asset
+#[derive(Debug, TypePath, Asset)]
+pub struct TextureAtlas {
+    /// Atlas Texture Image
+    pub texture: Handle<Image>,
+    /// Texture Atlas Layout
+    pub layout: Handle<TextureAtlasLayout>,
+}
 
 impl AssetLoader for SpriteSheetLoader {
     type Asset = TextureAtlas;
@@ -158,18 +172,22 @@ impl AssetLoader for SpriteSheetLoader {
             // Create a Handle from the Image
             let texture_atlas_image_size = texture_atlas_size;
             let texture_atlas_image_handle =
-                load_context.add_loaded_labeled_asset("image", texture_atlas_image.into());
+                load_context.add_loaded_labeled_asset("texture", texture_atlas_image.into());
 
-            let mut texture_atlas = TextureAtlas::new_empty(
-                texture_atlas_image_handle,
-                Vec2::new(
-                    texture_atlas_image_size.x as f32,
-                    texture_atlas_image_size.y as f32,
-                ),
-            );
+            let mut texture_atlas_layout = TextureAtlasLayout::new_empty(Vec2::new(
+                texture_atlas_image_size.x as f32,
+                texture_atlas_image_size.y as f32,
+            ));
             texture_atlas_textures.into_iter().for_each(|texture| {
-                texture_atlas.add_texture(texture);
+                texture_atlas_layout.add_texture(texture);
             });
+            let texture_atlas_layout_handle =
+                load_context.add_loaded_labeled_asset("layout", texture_atlas_layout.into());
+
+            let texture_atlas = TextureAtlas {
+                texture: texture_atlas_image_handle,
+                layout: texture_atlas_layout_handle,
+            };
 
             Ok(texture_atlas)
         })
@@ -366,6 +384,7 @@ fn create_texture_atlas_image(
                 * (texture_atlas_size.x * texture_atlas_size.y) as usize
         ],
         texture_format,
+        RenderAssetPersistencePolicy::default(),
     );
     let texture_atlas_textures: Vec<Rect> = rect_ids
         .into_iter()

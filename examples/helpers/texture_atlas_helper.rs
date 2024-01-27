@@ -2,8 +2,8 @@ use bevy::prelude::*;
 
 pub fn spawn_entire_texture_atlas(
     mut commands: Commands,
-    mut asset_event_evr: EventReader<AssetEvent<TextureAtlas>>,
-    texture_atlas_assets: Res<Assets<TextureAtlas>>,
+    mut asset_event_evr: EventReader<AssetEvent<bevy_titan::asset_loader::TextureAtlas>>,
+    texture_atlas_assets: Res<Assets<bevy_titan::asset_loader::TextureAtlas>>,
 ) {
     for ev in asset_event_evr.read() {
         if let AssetEvent::Added { id } = ev {

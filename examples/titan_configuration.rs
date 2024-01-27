@@ -24,10 +24,17 @@ fn main() {
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
 
-    let texture_atlas_handle = asset_server.load("gabe-idle-run-with-configuration.titan");
+    let texture_atlas_texture_handle =
+        asset_server.load("gabe-idle-run-with-configuration.titan#texture");
+    let texture_atlas_layout_handle =
+        asset_server.load("gabe-idle-run-with-configuration.titan#layout");
     commands.spawn((
         SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle,
+            texture: texture_atlas_texture_handle,
+            atlas: TextureAtlas {
+                layout: texture_atlas_layout_handle,
+                ..Default::default()
+            },
             transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
         },
