@@ -17,17 +17,19 @@ fn main() {
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(SpriteSheetLoaderPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, (spawn_entire_texture_atlas, animate_sprite))
+        .add_systems(Update, animate_sprite)
         .run();
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(Camera2dBundle::default());
+
     let texture_atlas_texture_handle = asset_server.load("composite-texture-atlas.titan#texture");
     let texture_atlas_layout_handle = asset_server.load("composite-texture-atlas.titan#layout");
-    commands.spawn(Camera2dBundle::default());
+
     commands.spawn((
         SpriteSheetBundle {
-            texture: texture_atlas_texture_handle,
+            texture: texture_atlas_texture_handle.clone(),
             atlas: TextureAtlas {
                 layout: texture_atlas_layout_handle,
                 ..Default::default()
@@ -37,4 +39,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ));
+
+    spawn_entire_texture_atlas(commands, texture_atlas_texture_handle);
 }

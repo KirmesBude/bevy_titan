@@ -20,6 +20,7 @@ thiserror = "1"
 ron = "0.8"
 # Sub dependencies of bevy; keep version in sync
 glam = { version = "0.24.1", default-features = false, features=["serde"]}
+wgpu-types = { version = "0.19", default-features = false, features=["replay"]} # Switch to serde feature once that actually compiles
 
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy.git", features = ["file_watcher"] }

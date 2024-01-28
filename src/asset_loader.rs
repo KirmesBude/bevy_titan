@@ -138,19 +138,19 @@ impl AssetLoader for SpriteSheetLoader {
 
                 /* Convert the image */
                 let image = if configuration.auto_format_conversion {
-                    image.convert(*configuration.format).ok_or(
+                    image.convert(configuration.format).ok_or(
                         SpriteSheetLoaderError::FormatConversionError(
                             titan_entry_path,
                             image.texture_descriptor.format,
-                            *configuration.format,
+                            configuration.format,
                         ),
                     )?
                 } else {
-                    if image.texture_descriptor.format != *configuration.format {
+                    if image.texture_descriptor.format != configuration.format {
                         return Err(SpriteSheetLoaderError::IncompatibleFormatError(
                             titan_entry_path,
                             image.texture_descriptor.format,
-                            *configuration.format,
+                            configuration.format,
                         ));
                     }
                     image
@@ -169,7 +169,7 @@ impl AssetLoader for SpriteSheetLoader {
                     configuration.max_size.x as f32,
                     configuration.max_size.y as f32,
                 ))
-                .format(*configuration.format)
+                .format(configuration.format)
                 .auto_format_conversion(configuration.auto_format_conversion)
                 .padding(configuration.padding);
             for image in &images {
