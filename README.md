@@ -16,7 +16,6 @@
 
 `bevy_titan` is a simple bevy plugin to load textures atlases from spritesheet manifest files written in ron.
 It also supports creating a texture atlas from multiple sprites and even multiple sprite sheets.
-This library is powered by [rectangle-pack](https://crates.io/crates/rectangle-pack).
 
 ## Quickstart
 

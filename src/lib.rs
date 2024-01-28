@@ -15,9 +15,8 @@ pub struct SpriteSheetLoaderPlugin;
 
 impl Plugin for SpriteSheetLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app
-        .init_asset::<asset_loader::TextureAtlas>()
-        .init_asset_loader::<asset_loader::SpriteSheetLoader>();
+        app.init_asset::<asset_loader::TextureAtlas>()
+            .init_asset_loader::<asset_loader::SpriteSheetLoader>();
     }
 }
 

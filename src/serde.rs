@@ -14,7 +14,7 @@ pub(crate) struct Titan {
 #[derive(Debug, Deserialize, Clone)]
 pub(crate) struct TitanConfiguration {
     #[serde(default)]
-    pub(crate) always_pack: bool,
+    pub(crate) always_pack: bool, /* TODO: Support or remove */
     #[serde(default = "default_initial_size")]
     pub(crate) initial_size: UVec2,
     #[serde(default = "default_max_size")]
