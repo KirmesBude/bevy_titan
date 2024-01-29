@@ -9,7 +9,6 @@
 ## TitanConfiguration
 | Field                  | Type                       | Necessity | Description |
 |------------------------|----------------------------|-----------|-------------|
-| always_pack            | bool                       | optional  | Always construct a new image from all textures even if only a single texture was provided. |
 | initial_size           | [UVec2]                    | optional  | Starting size of the combined texture atlas for the packing process. Default value (256,256). |
 | max_size               | [UVec2]                    | optional  | Maximum size that the combined texture atlas is allowed to grow to during the packing process. Default value (2048,2048). |
 | format                 | String of [TextureFormat]  | optional  | Texture format of the combined texture atlas. Default value Rgba8UnormSrgb. |

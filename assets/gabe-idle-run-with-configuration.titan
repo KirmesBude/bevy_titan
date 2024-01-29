@@ -1,7 +1,6 @@
 (
     configuration: (
         /* We can try to optimize the TextureAtlas */
-        always_pack: true, /* This needs to be enabled for the other options to take since we only provide a single texture */
         initial_size: (84, 84), /* We go for a square that should hold all rectangles */
         max_size: (84, 84), /* This ensures it will be exactly 84x84 */
         padding: (2, 2), /* Let's add some padding to combat spill */
