@@ -15,7 +15,7 @@ use bevy::{
     reflect::TypePath,
     render::{
         render_asset::RenderAssetPersistencePolicy,
-        render_resource::{Extent3d, TextureDimension, TextureFormat},
+        render_resource::{Extent3d, TextureDimension},
         texture::{Image, TextureFormatPixelInfo},
     },
     sprite::{TextureAtlasBuilder, TextureAtlasBuilderError, TextureAtlasLayout},
@@ -45,12 +45,6 @@ pub enum SpriteSheetLoaderError {
     /// A NotAnImageError.
     #[error("Loading from {0} does not provide Image")]
     NotAnImageError(String),
-    /// A FormatConversionError.
-    #[error("TextureFormat conversion failed for {0}: {1:?} to {2:?}")]
-    FormatConversionError(String, TextureFormat, TextureFormat),
-    /// A IncompatibleFormatError.
-    #[error("Placing texture {0} of format {1:?} into texture atlas of format {2:?}")]
-    IncompatibleFormatError(String, TextureFormat, TextureFormat),
     /// A [`TextureAtlasBuilderError`].
     #[error("TextureAtlasBuilderError: {0}")]
     TextureAtlasBuilderError(#[from] TextureAtlasBuilderError),
@@ -136,26 +130,6 @@ impl AssetLoader for SpriteSheetLoader {
                             titan_entry_path.clone(),
                         ))?;
 
-                /* Convert the image */
-                let image = if configuration.auto_format_conversion {
-                    image.convert(configuration.format).ok_or(
-                        SpriteSheetLoaderError::FormatConversionError(
-                            titan_entry_path,
-                            image.texture_descriptor.format,
-                            configuration.format,
-                        ),
-                    )?
-                } else {
-                    if image.texture_descriptor.format != configuration.format {
-                        return Err(SpriteSheetLoaderError::IncompatibleFormatError(
-                            titan_entry_path,
-                            image.texture_descriptor.format,
-                            configuration.format,
-                        ));
-                    }
-                    image
-                };
-
                 /* Get and insert all rects */
                 push_textures(&mut images, titan_entry, image)?;
             }
@@ -175,7 +149,7 @@ impl AssetLoader for SpriteSheetLoader {
             for image in &images {
                 texture_atlas_builder.add_texture(None, image);
             }
-            let (texture_atlas_layout, atlas_texture) = texture_atlas_builder.finish().unwrap(); /* TODO: Handle Error */
+            let (texture_atlas_layout, atlas_texture) = texture_atlas_builder.finish()?;
 
             let atlas_texture_handle =
                 load_context.add_loaded_labeled_asset("texture", atlas_texture.into());
