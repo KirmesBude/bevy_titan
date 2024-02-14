@@ -24,7 +24,7 @@ wgpu-types = { version = "0.19", default-features = false, features=["replay"]} 
 
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy.git", features = ["file_watcher"] }
-bevy_asset_loader = "0.18"
+bevy_asset_loader = { git = "https://github.com/NiklasEi/bevy_asset_loader.git", branch = "bevy_main" }
 
 [[example]]
 name = "homogeneous_sprite_sheet"

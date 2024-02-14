@@ -14,7 +14,7 @@ use bevy::{
     math::{URect, UVec2, Vec2},
     reflect::TypePath,
     render::{
-        render_asset::RenderAssetPersistencePolicy,
+        render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::{Image, TextureFormatPixelInfo},
     },
@@ -272,7 +272,7 @@ fn extract_texture_from_rect(image: &Image, rect: URect) -> Result<Image, Invali
             TextureDimension::D2,
             data,
             image.texture_descriptor.format,
-            RenderAssetPersistencePolicy::Unload,
+            RenderAssetUsages::MAIN_WORLD,
         );
         Ok(image)
     }
