@@ -13,8 +13,6 @@ pub(crate) struct Titan {
 
 #[derive(Debug, Deserialize, Clone)]
 pub(crate) struct TitanConfiguration {
-    #[serde(default)]
-    pub(crate) always_pack: bool, /* TODO: Support or remove */
     #[serde(default = "default_initial_size")]
     pub(crate) initial_size: UVec2,
     #[serde(default = "default_max_size")]
@@ -30,7 +28,6 @@ pub(crate) struct TitanConfiguration {
 impl Default for TitanConfiguration {
     fn default() -> Self {
         Self {
-            always_pack: bool::default(),
             initial_size: default_initial_size(),
             max_size: default_max_size(),
             format: default_format(),
