@@ -7,6 +7,7 @@
 
 | bevy | bevy_titan   |
 |------|--------------|
+| 0.13 | 0.6.0        |
 | 0.12 | 0.4.0, 0.5.0 |
 | 0.11 | 0.3.0        |
 | 0.10 | 0.2.0        |
@@ -22,7 +23,7 @@ It also supports creating a texture atlas from multiple sprites and even multipl
 
 ```toml, ignore
 # In your Cargo.toml
-bevy_titan = "0.5"
+bevy_titan = "0.6"
 ```
 
 ### homogeneous-sprite-sheet.titan

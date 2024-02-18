@@ -14,7 +14,7 @@ exclude = ["/assets"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy.git", default-features = false, features=["bevy_asset", "bevy_render", "bevy_sprite"]}
+bevy = { version = "0.13", default-features = false, features=["bevy_asset", "bevy_render", "bevy_sprite"]}
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
 ron = "0.8"
@@ -23,7 +23,7 @@ glam = { version = "0.24.1", default-features = false, features=["serde"]}
 wgpu-types = { version = "0.19", default-features = false, features=["replay"]} # Switch to serde feature once that actually compiles
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy.git", features = ["file_watcher"] }
+bevy = { version = "0.13", features = ["file_watcher"] }
 bevy_asset_loader = { git = "https://github.com/NiklasEi/bevy_asset_loader.git", branch = "bevy_main" }
 
 [[example]]
