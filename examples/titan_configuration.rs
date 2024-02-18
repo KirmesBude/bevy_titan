@@ -17,20 +17,29 @@ fn main() {
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(SpriteSheetLoaderPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, (spawn_entire_texture_atlas, animate_sprite))
+        .add_systems(Update, animate_sprite)
         .run();
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
 
-    let texture_atlas_handle = asset_server.load("gabe-idle-run-with-configuration.titan");
+    let texture_atlas_texture_handle =
+        asset_server.load("gabe-idle-run-with-configuration.titan#texture");
+    let texture_atlas_layout_handle =
+        asset_server.load("gabe-idle-run-with-configuration.titan#layout");
     commands.spawn((
         SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle,
+            texture: texture_atlas_texture_handle.clone(),
+            atlas: TextureAtlas {
+                layout: texture_atlas_layout_handle,
+                ..Default::default()
+            },
             transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
         },
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ));
+
+    spawn_entire_texture_atlas(commands, texture_atlas_texture_handle);
 }

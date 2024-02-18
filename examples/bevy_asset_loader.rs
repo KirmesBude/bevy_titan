@@ -15,13 +15,14 @@ use bevy_titan::SpriteSheetLoaderPlugin;
 /// Requires the feature '2d'
 fn main() {
     App::new()
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(SpriteSheetLoaderPlugin)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<MyAssets>(),
         )
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .add_systems(OnEnter(MyStates::Next), setup)
         .add_systems(Update, animate_sprite.run_if(in_state(MyStates::Next)))
         .run();
@@ -29,15 +30,21 @@ fn main() {
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(path = "gabe-idle-run.titan")]
-    texture_atlas: Handle<TextureAtlas>,
+    #[asset(path = "gabe-idle-run.titan#texture")]
+    atlas_texture: Handle<Image>,
+    #[asset(path = "gabe-idle-run.titan#layout")]
+    texture_atlas_layout: Handle<TextureAtlasLayout>,
 }
 
 fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     commands.spawn(Camera2dBundle::default());
     commands.spawn((
         SpriteSheetBundle {
-            texture_atlas: my_assets.texture_atlas.clone(),
+            texture: my_assets.atlas_texture.clone(),
+            atlas: TextureAtlas {
+                layout: my_assets.texture_atlas_layout.clone(),
+                ..Default::default()
+            },
             transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
         },

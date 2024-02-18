@@ -15,12 +15,14 @@ pub struct SpriteSheetLoaderPlugin;
 
 impl Plugin for SpriteSheetLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.init_asset_loader::<asset_loader::SpriteSheetLoader>();
+        app.init_asset::<asset_loader::TextureAtlas>()
+            .init_asset_loader::<asset_loader::SpriteSheetLoader>();
     }
 }
 
 /// `use bevy_titan::prelude::*;` to import common components and plugins.
 pub mod prelude {
     pub use crate::asset_loader::SpriteSheetLoaderError;
+    pub use crate::asset_loader::TextureAtlas;
     pub use crate::SpriteSheetLoaderPlugin;
 }

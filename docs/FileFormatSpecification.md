@@ -9,10 +9,9 @@
 ## TitanConfiguration
 | Field                  | Type                       | Necessity | Description |
 |------------------------|----------------------------|-----------|-------------|
-| always_pack            | bool                       | optional  | Always construct a new image from all textures even if only a single texture was provided. |
 | initial_size           | [UVec2]                    | optional  | Starting size of the combined texture atlas for the packing process. Default value (256,256). |
 | max_size               | [UVec2]                    | optional  | Maximum size that the combined texture atlas is allowed to grow to during the packing process. Default value (2048,2048). |
-| format                 | String of [TextureFormat]* | optional  | Texture format of the combined texture atlas. Default value Rgba8UnormSrgb. |
+| format                 | String of [TextureFormat]  | optional  | Texture format of the combined texture atlas. Default value Rgba8UnormSrgb. |
 | auto_format_conversion | bool                       | optional  | Automatically attempt to convert all textures into the texture format given for the combined texture atlas. Default value true. |
 | padding                | [UVec2]                    | optional  | Padding between the sprites in the combined texture atlas. Default value (0,0). |
 
@@ -27,7 +26,7 @@
 |---------------|-------------|
 | None          | Image asset is a single image. Default variant. |
 | Homogeneous   | Image asset is a homogeneous sprite sheet. |
-| Heterogeneous | Image asset is a heterogeneous sprite sheet. List of rects per sprite expressed by a tuple of [UVec2]*. The first member is the top left starting position of the rectangle and the second member is the width and the height.|
+| Heterogeneous | Image asset is a heterogeneous sprite sheet. List of rects per sprite expressed by a tuple of [UVec2]. The first member is the top left starting position of the rectangle and the second member is the width and the height.|
 
 ## TitanSpriteSheet::Homogeneous
 | Field     | Type     | Necessity | Description |
@@ -37,8 +36,6 @@
 | rows      | u32      | mandatory | The amount of rows in the sprite sheet. |
 | padding   | [UVec2]  | optional  | Padding between the sprites in the sprite sheet. Default value (0,0). |
 | offset    | [UVec2]  | optional  | Offset from (0,0) where the first sprite in the sprite sheet is located. Default value (0,0). |
-
-*TextureFormat is wrapped by bevy_titan internal types (Newtype).
 
 [TitanConfiguration]: #titanconfiguration
 [TitanEntry]: #titanentry
