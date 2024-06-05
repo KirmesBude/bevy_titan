@@ -80,80 +80,76 @@ impl AssetLoader for SpriteSheetLoader {
     type Settings = ();
     type Error = SpriteSheetLoaderError;
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext,
-    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let titan = ron::de::from_bytes::<Titan>(&bytes)?;
+        load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let titan = ron::de::from_bytes::<Titan>(&bytes)?;
 
-            let configuration = titan.configuration;
-            if configuration.max_size.x < configuration.initial_size.x
-                || configuration.max_size.y < configuration.initial_size.y
-            {
-                return Err(SpriteSheetLoaderError::SizeMismatchError(
-                    configuration.initial_size,
-                    configuration.max_size,
-                ));
+        let configuration = titan.configuration;
+        if configuration.max_size.x < configuration.initial_size.x
+            || configuration.max_size.y < configuration.initial_size.y
+        {
+            return Err(SpriteSheetLoaderError::SizeMismatchError(
+                configuration.initial_size,
+                configuration.max_size,
+            ));
+        }
+
+        let titan_entries = titan.textures;
+        if titan_entries.is_empty() {
+            return Err(SpriteSheetLoaderError::NoEntriesError);
+        }
+
+        let images_len = titan_entries.iter().fold(0, |acc, titan_entry| {
+            acc + match &titan_entry.sprite_sheet {
+                TitanSpriteSheet::None => 1,
+                TitanSpriteSheet::Homogeneous { columns, rows, .. } => (columns * rows) as usize,
+                TitanSpriteSheet::Heterogeneous(vec) => vec.len(),
             }
+        });
+        let mut images = Vec::with_capacity(images_len);
+        for titan_entry in titan_entries.into_iter() {
+            /* Load the image */
+            let titan_entry_path = titan_entry.path.clone();
+            let image_asset_path = AssetPath::from_path(Path::new(&titan_entry_path));
+            let image = load_context
+                .loader()
+                .direct()
+                .load(image_asset_path)
+                .await?;
 
-            let titan_entries = titan.textures;
-            if titan_entries.is_empty() {
-                return Err(SpriteSheetLoaderError::NoEntriesError);
-            }
+            /* Get and insert all rects */
+            push_textures(&mut images, titan_entry, image.take())?;
+        }
 
-            let images_len = titan_entries.iter().fold(0, |acc, titan_entry| {
-                acc + match &titan_entry.sprite_sheet {
-                    TitanSpriteSheet::None => 1,
-                    TitanSpriteSheet::Homogeneous { columns, rows, .. } => {
-                        (columns * rows) as usize
-                    }
-                    TitanSpriteSheet::Heterogeneous(vec) => vec.len(),
-                }
-            });
-            let mut images = Vec::with_capacity(images_len);
-            for titan_entry in titan_entries.into_iter() {
-                /* Load the image */
-                let titan_entry_path = titan_entry.path.clone();
-                let image_asset_path = AssetPath::from_path(Path::new(&titan_entry_path));
-                let image = load_context
-                    .loader()
-                    .direct()
-                    .load(image_asset_path)
-                    .await?;
+        let mut texture_atlas_builder = TextureAtlasBuilder::default();
+        texture_atlas_builder
+            .initial_size(configuration.initial_size)
+            .max_size(configuration.max_size)
+            .format(configuration.format)
+            .auto_format_conversion(configuration.auto_format_conversion)
+            .padding(configuration.padding);
+        for image in &images {
+            texture_atlas_builder.add_texture(None, image);
+        }
+        let (texture_atlas_layout, atlas_texture) = texture_atlas_builder.build()?;
 
-                /* Get and insert all rects */
-                push_textures(&mut images, titan_entry, image.take())?;
-            }
+        let atlas_texture_handle =
+            load_context.add_loaded_labeled_asset("texture", atlas_texture.into());
+        let texture_atlas_layout_handle =
+            load_context.add_loaded_labeled_asset("layout", texture_atlas_layout.into());
 
-            let mut texture_atlas_builder = TextureAtlasBuilder::default();
-            texture_atlas_builder
-                .initial_size(configuration.initial_size)
-                .max_size(configuration.max_size)
-                .format(configuration.format)
-                .auto_format_conversion(configuration.auto_format_conversion)
-                .padding(configuration.padding);
-            for image in &images {
-                texture_atlas_builder.add_texture(None, image);
-            }
-            let (texture_atlas_layout, atlas_texture) = texture_atlas_builder.build()?;
+        let texture_atlas = TextureAtlas {
+            texture: atlas_texture_handle,
+            layout: texture_atlas_layout_handle,
+        };
 
-            let atlas_texture_handle =
-                load_context.add_loaded_labeled_asset("texture", atlas_texture.into());
-            let texture_atlas_layout_handle =
-                load_context.add_loaded_labeled_asset("layout", texture_atlas_layout.into());
-
-            let texture_atlas = TextureAtlas {
-                texture: atlas_texture_handle,
-                layout: texture_atlas_layout_handle,
-            };
-
-            Ok(texture_atlas)
-        })
+        Ok(texture_atlas)
     }
 
     fn extensions(&self) -> &[&str] {
