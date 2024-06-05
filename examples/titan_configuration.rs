@@ -29,14 +29,14 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let texture_atlas_layout_handle =
         asset_server.load("gabe-idle-run-with-configuration.titan#layout");
     commands.spawn((
-        SpriteSheetBundle {
+        SpriteBundle {
             texture: texture_atlas_texture_handle.clone(),
-            atlas: TextureAtlas {
-                layout: texture_atlas_layout_handle,
-                ..Default::default()
-            },
             transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
+        },
+        TextureAtlas {
+            layout: texture_atlas_layout_handle,
+            ..Default::default()
         },
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ));
