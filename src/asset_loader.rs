@@ -11,7 +11,7 @@ use bevy::{
         io::Reader, Asset, AssetLoader, AssetPath, AsyncReadExt, Handle, LoadContext,
         LoadDirectError,
     },
-    math::{URect, UVec2, Vec2},
+    math::{URect, UVec2},
     reflect::TypePath,
     render::{
         render_asset::RenderAssetUsages,
@@ -19,7 +19,6 @@ use bevy::{
         texture::{Image, TextureFormatPixelInfo},
     },
     sprite::{TextureAtlasBuilder, TextureAtlasBuilderError, TextureAtlasLayout},
-    utils::BoxedFuture,
 };
 use thiserror::Error;
 
@@ -84,9 +83,9 @@ impl AssetLoader for SpriteSheetLoader {
     fn load<'a>(
         &'a self,
         reader: &'a mut Reader,
-        _settings: &'a (),
+        _settings: &'a Self::Settings,
         load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
+    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
@@ -121,34 +120,27 @@ impl AssetLoader for SpriteSheetLoader {
                 /* Load the image */
                 let titan_entry_path = titan_entry.path.clone();
                 let image_asset_path = AssetPath::from_path(Path::new(&titan_entry_path));
-                let image = load_context.load_direct(image_asset_path).await?;
-                let image =
-                    image
-                        .take::<Image>()
-                        .ok_or(SpriteSheetLoaderError::NotAnImageError(
-                            titan_entry_path.clone(),
-                        ))?;
+                let image = load_context
+                    .loader()
+                    .direct()
+                    .load(image_asset_path)
+                    .await?;
 
                 /* Get and insert all rects */
-                push_textures(&mut images, titan_entry, image)?;
+                push_textures(&mut images, titan_entry, image.take())?;
             }
 
-            let mut texture_atlas_builder = TextureAtlasBuilder::default()
-                .initial_size(Vec2::new(
-                    configuration.initial_size.x as f32,
-                    configuration.initial_size.y as f32,
-                ))
-                .max_size(Vec2::new(
-                    configuration.max_size.x as f32,
-                    configuration.max_size.y as f32,
-                ))
+            let mut texture_atlas_builder = TextureAtlasBuilder::default();
+            texture_atlas_builder
+                .initial_size(configuration.initial_size)
+                .max_size(configuration.max_size)
                 .format(configuration.format)
                 .auto_format_conversion(configuration.auto_format_conversion)
                 .padding(configuration.padding);
             for image in &images {
                 texture_atlas_builder.add_texture(None, image);
             }
-            let (texture_atlas_layout, atlas_texture) = texture_atlas_builder.finish()?;
+            let (texture_atlas_layout, atlas_texture) = texture_atlas_builder.build()?;
 
             let atlas_texture_handle =
                 load_context.add_loaded_labeled_asset("texture", atlas_texture.into());
