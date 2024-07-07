@@ -15,8 +15,8 @@ use bevy_titan::SpriteSheetLoaderPlugin;
 /// Requires the feature '2d'
 fn main() {
     App::new()
-        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
+        .init_state::<MyStates>()
         .add_plugins(SpriteSheetLoaderPlugin)
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
@@ -39,14 +39,14 @@ struct MyAssets {
 fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     commands.spawn(Camera2dBundle::default());
     commands.spawn((
-        SpriteSheetBundle {
+        SpriteBundle {
             texture: my_assets.atlas_texture.clone(),
-            atlas: TextureAtlas {
-                layout: my_assets.texture_atlas_layout.clone(),
-                ..Default::default()
-            },
             transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
+        },
+        TextureAtlas {
+            layout: my_assets.texture_atlas_layout.clone(),
+            ..Default::default()
         },
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ));

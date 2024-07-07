@@ -8,6 +8,7 @@
 | bevy | bevy_titan   |
 |------|--------------|
 | main | main         |
+| 0.14 | 0.7.0        |
 | 0.13 | 0.6.0        |
 | 0.12 | 0.4.0, 0.5.0 |
 | 0.11 | 0.3.0        |
@@ -18,13 +19,14 @@
 
 `bevy_titan` is a simple bevy plugin to load textures atlases from spritesheet manifest files written in ron.
 It also supports creating a texture atlas from multiple sprites and even multiple sprite sheets.
+Supports hot reloading.
 
 ## Quickstart
 
 
 ```toml, ignore
 # In your Cargo.toml
-bevy_titan = "0.6"
+bevy_titan = "0.7"
 ```
 
 ### homogeneous-sprite-sheet.titan
@@ -89,17 +91,22 @@ fn main() {
         .run();
 }
 
-fn setup() {
+fn setup() {Code in tests, examples and benches gets formatted with cargo fmt.
     /* Setup camera and other stuff */
 }
 
 fn load_texture_atlas(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(
-        SpriteSheetBundle {
-            texture_atlas: asset_server.load("example.titan"),
+    commands.spawn((
+        SpriteBundle {
+            texture: asset_server.load("example.titan#texture"),
+            transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
+        },
+        TextureAtlas {
+            layout: asset_server.load("example.titan#layout"),
+            ..Default::default()
         }
-    );
+    ));
 }
 ```
 
