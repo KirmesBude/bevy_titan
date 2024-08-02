@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/bevy_titan)](https://crates.io/crates/bevy_titan)
 [![Bevy tracking](https://img.shields.io/badge/Bevy%20tracking-released%20version-lightblue)](https://github.com/bevyengine/bevy/blob/main/docs/plugins_guidelines.md#main-branch-tracking)
 [![docs.rs](https://docs.rs/bevy_titan/badge.svg)](https://docs.rs/bevy_titan)
-[![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/bevyengine/bevy#license)
+[![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/KirmesBude/bevy_titan#license)
 
 | bevy | bevy_titan   |
 |------|--------------|
@@ -91,7 +91,7 @@ fn main() {
         .run();
 }
 
-fn setup() {Code in tests, examples and benches gets formatted with cargo fmt.
+fn setup() {
     /* Setup camera and other stuff */
 }
 
