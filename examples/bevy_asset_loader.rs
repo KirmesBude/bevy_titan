@@ -30,9 +30,9 @@ fn main() {
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(path = "gabe-idle-run.titan#texture")]
+    #[asset(path = "gabe-idle-run.ron#texture")]
     atlas_texture: Handle<Image>,
-    #[asset(path = "gabe-idle-run.titan#layout")]
+    #[asset(path = "gabe-idle-run.ron#layout")]
     texture_atlas_layout: Handle<TextureAtlasLayout>,
 }
 

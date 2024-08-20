@@ -1,4 +1,4 @@
-# Titan file format specification.
+# Titan RON file format specification.
 
 ## Titan
 | Field         | Type                   | Necessity | Description |
