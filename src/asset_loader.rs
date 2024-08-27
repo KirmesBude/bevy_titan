@@ -12,7 +12,7 @@ use bevy::{
         LoadDirectError,
     },
     math::{URect, UVec2},
-    reflect::TypePath,
+    reflect::Reflect,
     render::{
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension},
@@ -67,7 +67,7 @@ pub struct InvalidRectError(UVec2, UVec2, String);
 pub const FILE_EXTENSIONS: &[&str] = &["ron", "titan"];
 
 /// TextureAtlas Asset
-#[derive(Debug, TypePath, Asset)]
+#[derive(Debug, Asset, Reflect)]
 pub struct TextureAtlas {
     /// Atlas Texture Image
     pub texture: Handle<Image>,
