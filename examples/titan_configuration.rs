@@ -25,9 +25,9 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
 
     let texture_atlas_texture_handle =
-        asset_server.load("gabe-idle-run-with-configuration.ron#texture");
+        asset_server.load("gabe-idle-run-with-configuration.titan.ron#texture");
     let texture_atlas_layout_handle =
-        asset_server.load("gabe-idle-run-with-configuration.ron#layout");
+        asset_server.load("gabe-idle-run-with-configuration.titan.ron#layout");
     commands.spawn((
         SpriteBundle {
             texture: texture_atlas_texture_handle.clone(),

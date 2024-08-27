@@ -1,4 +1,8 @@
-v0.8.0
+v0.8.1
+================================================================================================================================
+Specifically support .titan.ron files instead of straight .ron files, because of conflicts loading labeled assets.
+
+v0.8.0 (yanked)
 ================================================================================================================================
 File extension now supports .ron, .titan is still supported but is not recommended anymore.
 

@@ -24,8 +24,9 @@ fn main() {
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
 
-    let texture_atlas_texture_handle = asset_server.load("composite-texture-atlas.ron#texture");
-    let texture_atlas_layout_handle = asset_server.load("composite-texture-atlas.ron#layout");
+    let texture_atlas_texture_handle =
+        asset_server.load("composite-texture-atlas.titan.ron#texture");
+    let texture_atlas_layout_handle = asset_server.load("composite-texture-atlas.titan.ron#layout");
 
     commands.spawn((
         SpriteBundle {

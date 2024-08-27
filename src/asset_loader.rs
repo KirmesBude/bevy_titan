@@ -64,7 +64,7 @@ pub enum SpriteSheetLoaderError {
 pub struct InvalidRectError(UVec2, UVec2, String);
 
 /// File extension for spritesheet manifest files written in ron.
-pub const FILE_EXTENSIONS: &[&str] = &["ron", "titan"];
+pub const FILE_EXTENSIONS: &[&str] = &["titan.ron", "titan"];
 
 /// TextureAtlas Asset
 #[derive(Debug, Asset, Reflect)]

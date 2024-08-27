@@ -8,7 +8,7 @@
 | bevy | bevy_titan   |
 |------|--------------|
 | main | main         |
-| 0.14 | 0.7.0, 0.8.0 |
+| 0.14 | 0.7.0, 0.8.1 |
 | 0.13 | 0.6.0        |
 | 0.12 | 0.4.0, 0.5.0 |
 | 0.11 | 0.3.0        |
@@ -26,10 +26,10 @@ Supports hot reloading.
 
 ```toml, ignore
 # In your Cargo.toml
-bevy_titan = "0.8"
+bevy_titan = "0.8.1"
 ```
 
-### homogeneous-sprite-sheet.ron
+### homogeneous-sprite-sheet.titan.ron
 ```rust, ignore
 //! A basic example of a titan ron file for a homogeneous sprite sheet.
 (
@@ -49,7 +49,7 @@ bevy_titan = "0.8"
 )
 ```
 
-### heterogeneous-sprite-sheet.ron
+### heterogeneous-sprite-sheet.titan.ron
 ```rust, ignore
 //! A basic example of a titan ron file for a heterogeneous sprite sheet.
 (
@@ -98,12 +98,12 @@ fn setup() {
 fn load_texture_atlas(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         SpriteBundle {
-            texture: asset_server.load("example.ron#texture"),
+            texture: asset_server.load("example.titan.ron#texture"),
             transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
         },
         TextureAtlas {
-            layout: asset_server.load("example.ron#layout"),
+            layout: asset_server.load("example.titan.ron#layout"),
             ..Default::default()
         }
     ));
