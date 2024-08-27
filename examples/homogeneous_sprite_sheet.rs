@@ -19,8 +19,8 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let texture_atlas_texture_handle = asset_server.load("gabe-idle-run.titan#texture");
-    let texture_atlas_layout_handle = asset_server.load("gabe-idle-run.titan#layout");
+    let texture_atlas_texture_handle = asset_server.load("gabe-idle-run.ron#texture");
+    let texture_atlas_layout_handle = asset_server.load("gabe-idle-run.ron#layout");
     commands.spawn(Camera2dBundle::default());
     commands.spawn((
         SpriteBundle {
