@@ -7,16 +7,14 @@
 use std::path::Path;
 
 use bevy::{
-    asset::{
-        io::Reader, Asset, AssetLoader, AssetPath, AsyncReadExt, Handle, LoadContext,
-        LoadDirectError,
-    },
+    asset::{io::Reader, Asset, AssetLoader, AssetPath, Handle, LoadContext, LoadDirectError},
+    image::TextureFormatPixelInfo,
     math::{URect, UVec2},
+    prelude::Image,
     reflect::Reflect,
     render::{
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension},
-        texture::{Image, TextureFormatPixelInfo},
     },
     sprite::{TextureAtlasBuilder, TextureAtlasBuilderError, TextureAtlasLayout},
 };
@@ -80,11 +78,11 @@ impl AssetLoader for SpriteSheetLoader {
     type Settings = ();
     type Error = SpriteSheetLoaderError;
 
-    async fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader<'_>,
-        _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext<'_>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
@@ -119,7 +117,7 @@ impl AssetLoader for SpriteSheetLoader {
             let image_asset_path = AssetPath::from_path(Path::new(&titan_entry_path));
             let image = load_context
                 .loader()
-                .direct()
+                .immediate()
                 .load(image_asset_path)
                 .await?;
 
@@ -137,7 +135,7 @@ impl AssetLoader for SpriteSheetLoader {
         for image in &images {
             texture_atlas_builder.add_texture(None, image);
         }
-        let (texture_atlas_layout, atlas_texture) = texture_atlas_builder.build()?;
+        let (texture_atlas_layout, _, atlas_texture) = texture_atlas_builder.build()?;
 
         let atlas_texture_handle =
             load_context.add_loaded_labeled_asset("texture", atlas_texture.into());
