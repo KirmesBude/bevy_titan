@@ -37,17 +37,17 @@ struct MyAssets {
 }
 
 fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
     commands.spawn((
-        SpriteBundle {
-            texture: my_assets.atlas_texture.clone(),
-            transform: Transform::from_scale(Vec3::splat(6.0)),
-            ..default()
-        },
-        TextureAtlas {
-            layout: my_assets.texture_atlas_layout.clone(),
+        Sprite {
+            image: my_assets.atlas_texture.clone(),
+            texture_atlas: Some(TextureAtlas {
+                layout: my_assets.texture_atlas_layout.clone(),
+                ..Default::default()
+            }),
             ..Default::default()
         },
+        Transform::from_scale(Vec3::splat(6.0)),
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ));
 }

@@ -8,9 +8,8 @@ use std::path::Path;
 
 use bevy::{
     asset::{io::Reader, Asset, AssetLoader, AssetPath, Handle, LoadContext, LoadDirectError},
-    image::TextureFormatPixelInfo,
+    image::{Image, TextureFormatPixelInfo},
     math::{URect, UVec2},
-    prelude::Image,
     reflect::Reflect,
     render::{
         render_asset::RenderAssetUsages,
