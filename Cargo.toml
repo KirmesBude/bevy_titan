@@ -14,7 +14,8 @@ exclude = ["/assets"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.15.0", default-features = false, features=["bevy_asset", "bevy_sprite", "png"] } # Workaround: Enable png to implicitly enable bevy_image
+bevy = { version = "0.15.0", default-features = false, features=["bevy_asset", "bevy_sprite"] }
+bevy_internal = { version = "0.15", features = [ "bevy_image" ]} # Workaround for bevy_image
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
 ron = "0.8"
