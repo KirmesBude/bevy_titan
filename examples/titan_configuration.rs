@@ -22,22 +22,22 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 
     let texture_atlas_texture_handle =
         asset_server.load("gabe-idle-run-with-configuration.titan.ron#texture");
     let texture_atlas_layout_handle =
         asset_server.load("gabe-idle-run-with-configuration.titan.ron#layout");
     commands.spawn((
-        SpriteBundle {
-            texture: texture_atlas_texture_handle.clone(),
-            transform: Transform::from_scale(Vec3::splat(6.0)),
-            ..default()
-        },
-        TextureAtlas {
-            layout: texture_atlas_layout_handle,
+        Sprite {
+            image: texture_atlas_texture_handle.clone(),
+            texture_atlas: Some(TextureAtlas {
+                layout: texture_atlas_layout_handle,
+                ..Default::default()
+            }),
             ..Default::default()
         },
+        Transform::from_scale(Vec3::splat(6.0)),
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ));
 
