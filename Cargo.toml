@@ -1,7 +1,7 @@
 [package]
 authors = ["KirmesBude <kirmesbude@gmail.com>"]
 name = "bevy_titan"
-version = "0.9.0-dev"
+version = "0.9.0"
 edition = "2021"
 description = "Bevy plugin for spritesheet manifest loading"
 repository = "https://github.com/KirmesBude/bevy_titan"
@@ -14,18 +14,18 @@ exclude = ["/assets"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.15.0", default-features = false, features=["bevy_asset", "bevy_sprite"] }
+bevy = { version = "0.15", default-features = false, features=["bevy_asset", "bevy_sprite"] }
 bevy_internal = { version = "0.15", features = [ "bevy_image" ]} # Workaround for bevy_image
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
 ron = "0.8"
 # Sub dependencies of bevy; keep version in sync
-glam = { version = "0.29.2", default-features = false, features=["serde"]}
-wgpu-types = { version = "23.0.0", default-features = false, features=["serde"]}
+glam = { version = "0.29", default-features = false, features=["serde"]}
+wgpu-types = { version = "23.0", default-features = false, features=["serde"]}
 
 [dev-dependencies]
-bevy = { version = "0.15.0", features = ["file_watcher"] }
-bevy_asset_loader = { git = "https://github.com/NiklasEi/bevy_asset_loader.git", tag = "v0.22.0-rc.1" }
+bevy = { version = "0.15", features = ["file_watcher"] }
+bevy_asset_loader = "0.22"
 
 [[example]]
 name = "homogeneous_sprite_sheet"
