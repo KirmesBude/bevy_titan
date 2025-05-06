@@ -8,14 +8,16 @@ use std::path::Path;
 
 use bevy::{
     asset::{io::Reader, Asset, AssetLoader, AssetPath, Handle, LoadContext, LoadDirectError},
-    image::{Image, TextureFormatPixelInfo},
+    image::{
+        Image, TextureAtlasBuilder, TextureAtlasBuilderError, TextureAtlasLayout,
+        TextureFormatPixelInfo,
+    },
     math::{URect, UVec2},
     reflect::Reflect,
     render::{
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension},
     },
-    sprite::{TextureAtlasBuilder, TextureAtlasBuilderError, TextureAtlasLayout},
 };
 use thiserror::Error;
 
@@ -217,8 +219,10 @@ fn extract_texture_from_rect(image: &Image, rect: URect) -> Result<Image, Invali
             let texture_atlas_rect_end =
                 texture_atlas_rect_begin + rect_size.x as usize * format_size;
 
-            data[data_begin..data_end]
-                .copy_from_slice(&image.data[texture_atlas_rect_begin..texture_atlas_rect_end]);
+            // TODO: Handle error?
+            data[data_begin..data_end].copy_from_slice(
+                &image.data.as_ref().unwrap()[texture_atlas_rect_begin..texture_atlas_rect_end],
+            );
         }
 
         let image = Image::new(
