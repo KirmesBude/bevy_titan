@@ -2,7 +2,7 @@
 authors = ["KirmesBude <kirmesbude@gmail.com>"]
 name = "bevy_titan"
 version = "0.10.0"
-edition = "2021"
+edition = "2024"
 description = "Bevy plugin for spritesheet manifest loading"
 repository = "https://github.com/KirmesBude/bevy_titan"
 license = "MIT OR Apache-2.0"
