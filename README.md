@@ -8,6 +8,7 @@
 | bevy | bevy_titan   |
 |------|--------------|
 | main | main         |
+| 0.16 | 0.10.0       |
 | 0.15 | 0.9.0        |
 | 0.14 | 0.7.0, 0.8.1 |
 | 0.13 | 0.6.0        |
@@ -27,7 +28,7 @@ Supports hot reloading.
 
 ```toml, ignore
 # In your Cargo.toml
-bevy_titan = "0.9.0"
+bevy_titan = "0.10.0"
 ```
 
 ### homogeneous-sprite-sheet.titan.ron
