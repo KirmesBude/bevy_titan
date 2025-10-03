@@ -7,17 +7,17 @@
 use std::path::Path;
 
 use bevy::{
-    asset::{io::Reader, Asset, AssetLoader, AssetPath, Handle, LoadContext, LoadDirectError},
+    asset::{
+        Asset, AssetLoader, AssetPath, Handle, LoadContext, LoadDirectError, RenderAssetUsages,
+        io::Reader,
+    },
     image::{
         Image, TextureAtlasBuilder, TextureAtlasBuilderError, TextureAtlasLayout,
         TextureFormatPixelInfo,
     },
     math::{URect, UVec2},
     reflect::Reflect,
-    render::{
-        render_asset::RenderAssetUsages,
-        render_resource::{Extent3d, TextureDimension},
-    },
+    render::render_resource::{Extent3d, TextureDimension},
 };
 use thiserror::Error;
 
@@ -206,7 +206,7 @@ fn extract_texture_from_rect(image: &Image, rect: URect) -> Result<Image, Invali
     if (rect.max.x > image.size().x) || (rect.max.y > image.size().y) {
         Err(InvalidRectError(rect.min, rect.max, String::from("Test")))
     } else {
-        let format_size = image.texture_descriptor.format.pixel_size();
+        let format_size = image.texture_descriptor.format.pixel_size().unwrap(); /* TODO: Create new error */
         let rect_size = UVec2::new(rect.max.x - rect.min.x, rect.max.y - rect.min.y);
         let mut data: Vec<u8> = vec![0; (rect_size.x * rect_size.y) as usize * format_size];
 
