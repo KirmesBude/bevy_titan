@@ -16,7 +16,7 @@ use bevy::{
         TextureAtlasLayout, TextureFormatPixelInfo,
     },
     math::{URect, UVec2},
-    reflect::Reflect,
+    reflect::{Reflect, TypePath},
     render::render_resource::{Extent3d, TextureDimension},
 };
 use thiserror::Error;
@@ -24,7 +24,7 @@ use thiserror::Error;
 use crate::serde::{Titan, TitanEntry, TitanSpriteSheet};
 
 /// Loader for spritesheet manifest files written in ron. Loads a TextureAtlas asset.
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct SpriteSheetLoader;
 
 /// Possible errors that can be produced by [`SpriteSheetLoader`].
