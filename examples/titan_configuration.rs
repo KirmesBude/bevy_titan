@@ -7,7 +7,7 @@ mod animation_helper;
 #[path = "helpers/texture_atlas_helper.rs"]
 mod texture_atlas_helper;
 
-use animation_helper::{animate_sprite, AnimationTimer};
+use animation_helper::{AnimationTimer, animate_sprite};
 use bevy::prelude::*;
 use bevy_titan::SpriteSheetLoaderPlugin;
 use texture_atlas_helper::spawn_entire_texture_atlas;

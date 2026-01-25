@@ -23,7 +23,7 @@ impl Plugin for SpriteSheetLoaderPlugin {
 
 /// `use bevy_titan::prelude::*;` to import common components and plugins.
 pub mod prelude {
+    pub use crate::SpriteSheetLoaderPlugin;
     pub use crate::asset_loader::SpriteSheetLoaderError;
     pub use crate::asset_loader::TextureAtlas;
-    pub use crate::SpriteSheetLoaderPlugin;
 }

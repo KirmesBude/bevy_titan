@@ -1,9 +1,8 @@
 //! This module defines all types necessary for deserialization of titan ron files.
 //!
 
-use bevy::math::UVec2;
+use bevy::{math::UVec2, render::render_resource::TextureFormat};
 use serde::Deserialize;
-use wgpu_types::TextureFormat;
 
 #[derive(Debug, Deserialize, Clone)]
 pub(crate) struct Titan {

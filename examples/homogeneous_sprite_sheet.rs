@@ -5,7 +5,7 @@
 #[path = "helpers/animation_helper.rs"]
 mod animation_helper;
 
-use animation_helper::{animate_sprite, AnimationTimer};
+use animation_helper::{AnimationTimer, animate_sprite};
 use bevy::prelude::*;
 use bevy_titan::SpriteSheetLoaderPlugin;
 
