@@ -1,7 +1,7 @@
 [package]
 authors = ["KirmesBude <kirmesbude@gmail.com>"]
 name = "bevy_titan"
-version = "0.11.0-rc2"
+version = "0.11.0"
 edition = "2024"
 description = "Bevy plugin for spritesheet manifest loading"
 repository = "https://github.com/KirmesBude/bevy_titan"
@@ -21,7 +21,7 @@ ron = "0.10"
 
 [dev-dependencies]
 bevy = { version = "0.17", features = ["file_watcher"] }
-bevy_asset_loader = { version = "0.24.0-rc.1", features = ["2d"] }
+bevy_asset_loader = { version = "0.24", features = ["2d"] }
 
 [[example]]
 name = "homogeneous_sprite_sheet"

@@ -12,8 +12,8 @@ use bevy::{
         io::Reader,
     },
     image::{
-        Image, TextureAtlasBuilder, TextureAtlasBuilderError, TextureAtlasLayout,
-        TextureFormatPixelInfo,
+        Image, TextureAccessError, TextureAtlasBuilder, TextureAtlasBuilderError,
+        TextureAtlasLayout, TextureFormatPixelInfo,
     },
     math::{URect, UVec2},
     reflect::Reflect,
@@ -46,21 +46,27 @@ pub enum SpriteSheetLoaderError {
     /// A [`TextureAtlasBuilderError`].
     #[error("TextureAtlasBuilderError: {0}")]
     TextureAtlasBuilderError(#[from] TextureAtlasBuilderError),
-    /// A NoEntriesError
+    /// A NoEntriesError.
     #[error("No entries were found")]
     NoEntriesError,
-    /// An [`InvalidRectError`].
-    #[error("InvalidRectError: {0}")]
-    InvalidRectError(#[from] InvalidRectError),
+    /// An [`TextureExtractError`].
+    #[error("TextureExtractError: {0}")]
+    TextureExtractError(#[from] TextureExtractError),
     /// A SizeMismatchError.
     #[error("Configured initial size {0} is bigger than max size {1}")]
     SizeMismatchError(UVec2, UVec2),
 }
 
-/// InvalidRectError.
+/// TextureExtractError.
 #[derive(Debug, Error)]
-#[error("Rect with min {0} and max {1} is invalid for image {2}")]
-pub struct InvalidRectError(UVec2, UVec2, String);
+pub enum TextureExtractError {
+    /// An InvalidRectError.
+    #[error("Rect with min {0} and max {1} is invalid for image {2}")]
+    InvalidRectError(UVec2, UVec2, String),
+    /// A [`TextureAccessError`].
+    #[error("TextureAccessError: {0}")]
+    TextureAccessError(#[from] TextureAccessError),
+}
 
 /// File extension for spritesheet manifest files written in ron.
 pub const FILE_EXTENSIONS: &[&str] = &["titan.ron", "titan"];
@@ -160,7 +166,7 @@ fn push_textures(
     images: &mut Vec<Image>,
     titan_entry: TitanEntry,
     texture: Image,
-) -> Result<(), InvalidRectError> {
+) -> Result<(), TextureExtractError> {
     match titan_entry.sprite_sheet {
         TitanSpriteSheet::None => {
             images.push(texture);
@@ -202,11 +208,15 @@ fn push_textures(
     Ok(())
 }
 
-fn extract_texture_from_rect(image: &Image, rect: URect) -> Result<Image, InvalidRectError> {
+fn extract_texture_from_rect(image: &Image, rect: URect) -> Result<Image, TextureExtractError> {
     if (rect.max.x > image.size().x) || (rect.max.y > image.size().y) {
-        Err(InvalidRectError(rect.min, rect.max, String::from("Test")))
+        Err(TextureExtractError::InvalidRectError(
+            rect.min,
+            rect.max,
+            String::from("Test"),
+        ))
     } else {
-        let format_size = image.texture_descriptor.format.pixel_size().unwrap(); /* TODO: Create new error */
+        let format_size = image.texture_descriptor.format.pixel_size()?;
         let rect_size = UVec2::new(rect.max.x - rect.min.x, rect.max.y - rect.min.y);
         let mut data: Vec<u8> = vec![0; (rect_size.x * rect_size.y) as usize * format_size];
 
