@@ -4,7 +4,7 @@
 //! Assets with the 'titan' extension can be loaded just like any other asset via the [`AssetServer`](::bevy::asset::AssetServer)
 //! and will yield a [`TextureAtlas`] [`Handle`](::bevy::asset::Handle).
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use bevy::{
     asset::{
@@ -121,7 +121,20 @@ impl AssetLoader for SpriteSheetLoader {
         for titan_entry in titan_entries.into_iter() {
             /* Load the image */
             let titan_entry_path = titan_entry.path.clone();
-            let image_asset_path = AssetPath::from_path(Path::new(&titan_entry_path));
+
+            let resolved_path = match titan_entry_path.starts_with("./") || titan_entry_path.starts_with("../") {
+                true => {
+                    let ron_dir = load_context
+                        .path()
+                        .parent()
+                        .unwrap_or(Path::new("").into());
+                    normalize(&ron_dir.path().join(&titan_entry_path))
+                }
+                false => PathBuf::from(&titan_entry_path),
+            };
+
+            let image_asset_path = AssetPath::from_path(&resolved_path);
+
             let image = load_context
                 .loader()
                 .immediate()
@@ -248,6 +261,18 @@ fn extract_texture_from_rect(image: &Image, rect: URect) -> Result<Image, Textur
         );
         Ok(image)
     }
+}
+
+fn normalize(path: &Path) -> PathBuf {
+    let mut result = PathBuf::new();
+    for component in path.components() {
+        match component {
+            std::path::Component::ParentDir => { result.pop(); }
+            std::path::Component::CurDir => {}
+            c => result.push(c),
+        }
+    }
+    result
 }
 
 #[cfg(test)]
