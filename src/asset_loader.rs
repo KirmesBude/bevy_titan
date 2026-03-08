@@ -122,13 +122,13 @@ impl AssetLoader for SpriteSheetLoader {
             /* Load the image */
             let titan_entry_path = titan_entry.path.clone();
 
-            let resolved_path = match titan_entry_path.starts_with("./") {
+            let resolved_path = match titan_entry_path.starts_with("./") || titan_entry_path.starts_with("../") {
                 true => {
                     let ron_dir = load_context
                         .path()
                         .parent()
                         .unwrap_or(Path::new("").into());
-                    ron_dir.path().join(&titan_entry_path)
+                    normalize(&ron_dir.path().join(&titan_entry_path))
                 }
                 false => PathBuf::from(&titan_entry_path),
             };
@@ -261,6 +261,18 @@ fn extract_texture_from_rect(image: &Image, rect: URect) -> Result<Image, Textur
         );
         Ok(image)
     }
+}
+
+fn normalize(path: &Path) -> PathBuf {
+    let mut result = PathBuf::new();
+    for component in path.components() {
+        match component {
+            std::path::Component::ParentDir => { result.pop(); }
+            std::path::Component::CurDir => {}
+            c => result.push(c),
+        }
+    }
+    result
 }
 
 #[cfg(test)]
